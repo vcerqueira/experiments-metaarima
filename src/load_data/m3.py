@@ -1,6 +1,6 @@
 from datasetsforecast.m3 import M3
 
-from utils.load_data.base import LoadDataset
+from src.load_data.base import LoadDataset
 
 
 class M3Dataset(LoadDataset):

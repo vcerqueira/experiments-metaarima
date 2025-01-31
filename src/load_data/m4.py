@@ -1,7 +1,7 @@
 import pandas as pd
 from datasetsforecast.m4 import M4
 
-from utils.load_data.base import LoadDataset
+from src.load_data.base import LoadDataset
 
 
 class M4Dataset(LoadDataset):

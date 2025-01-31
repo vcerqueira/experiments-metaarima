@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from utils.load_data.base import LoadDataset
+from src.load_data.base import LoadDataset
 
 
 class TourismDataset(LoadDataset):

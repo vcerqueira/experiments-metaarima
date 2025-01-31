@@ -1,7 +1,7 @@
-from utils.load_data.m3 import M3Dataset
-from utils.load_data.m4 import M4Dataset
-from utils.load_data.tourism import TourismDataset
-from utils.load_data.gluonts import GluontsDataset
+from src.load_data.m3 import M3Dataset
+from src.load_data.m4 import M4Dataset
+from src.load_data.tourism import TourismDataset
+from src.load_data.gluonts import GluontsDataset
 
 DATASETS = {
     'M3': M3Dataset,
