@@ -1,3 +1,6 @@
 # meta-arima
 
-s
+contributions:
+
+- metaarima
+- metadataset

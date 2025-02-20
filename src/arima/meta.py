@@ -1,8 +1,38 @@
+from typing import Optional, List, Dict
+
 import numpy as np
+import pandas as pd
 from scipy import stats
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import jarque_bera
 from statsforecast.models import ARIMA
+from statsforecast import StatsForecast
+
+
+class MetaARIMABase:
+
+    def __init__(self, configs: List[str], season_length: int, freq: str):
+        self.configs = configs
+        self.freq = freq
+        self.season_length = season_length
+        self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=self.configs)
+        self.n_models = len(self.models)
+        self.sf = StatsForecast(models=self.models, freq=self.freq)
+
+        self.alias = 'MetaARIMA'
+
+    def fit(self, df: pd.DataFrame):
+        self.sf.fit(df=df)
+
+        aicc_ = [self.sf.fitted_[0][i].model_['aicc'] for i in range(self.n_models)]
+
+        best_idx = np.array(aicc_).argmin()
+
+        self.sf.fitted_ = np.array([[self.sf.fitted_[0][best_idx]]])
+        self.sf.fitted_[0][0].alias = self.alias
+
+    def predict(self, h: int):
+        return self.sf.predict(h=h)
 
 
 class MetaARIMAUtils:
@@ -15,21 +45,50 @@ class MetaARIMAUtils:
         'S_MA': 1,
     }
 
+    @staticmethod
+    def get_model_order(mod, as_alias: bool = False, alias_freq=1):
+        order = tuple(mod["arma"][i] for i in [0, 5, 1, 2, 6, 3, 4])
+
+        ord = pd.Series(order, index=['AR', 'I', 'MA', 'S_AR', 'S_I', 'S_MA', 'm'])
+
+        if as_alias:
+            alias = f'ARIMA({ord[0]},{ord[1]},{ord[2]})({ord[3]},{ord[4]},{ord[5]})[{alias_freq}]'
+            return alias
+
+        return ord
+
     @classmethod
-    def get_models_sf(cls, season_length: int):
+    def get_models_sf(cls,
+                      season_length: int,
+                      return_names: bool = False,
+                      max_config: Optional[Dict] = None,
+                      alias_list: Optional[List[str]] = None):
+
+        if max_config is None:
+            max_config_ = cls.ORDER_MAX
+        else:
+            max_config_ = max_config
+
         models = []
-        for ar in range(cls.ORDER_MAX['AR'] + 1):
-            for i in range(cls.ORDER_MAX['I'] + 1):
-                for ma in range(cls.ORDER_MAX['MA'] + 1):
-                    for s_ar in range(cls.ORDER_MAX['S_AR'] + 1):
-                        for s_i in range(cls.ORDER_MAX['S_I'] + 1):
-                            for s_ma in range(cls.ORDER_MAX['S_MA'] + 1):
+        for ar in range(max_config_['AR'] + 1):
+            for i in range(max_config_['I'] + 1):
+                for ma in range(max_config_['MA'] + 1):
+                    for s_ar in range(max_config_['S_AR'] + 1):
+                        for s_i in range(max_config_['S_I'] + 1):
+                            for s_ma in range(max_config_['S_MA'] + 1):
                                 models.append(
                                     ARIMA(order=(ar, i, ma),
                                           season_length=season_length,
                                           seasonal_order=(s_ar, s_i, s_ma),
                                           alias=f'ARIMA({ar},{i},{ma})({s_ar},{s_i},{s_ma})[{season_length}]')
                                 )
+
+        if return_names:
+            model_names = [x.alias for x in models]
+            return model_names
+
+        if alias_list is not None:
+            models = [x for x in models if x.alias in alias_list]
 
         return models
 
@@ -39,8 +98,13 @@ class MetaARIMAUtils:
         coefs = {f'coef_{k}': model['coef'][k]
                  for k in model['coef']}
 
+        try:
+            var_coef_avg = model['var_coef'].mean()
+        except AttributeError:
+            var_coef_avg = np.nan
+
         goodness_fit = {
-            'var_coef_mean': model['var_coef'].mean(),
+            'var_coef_mean': var_coef_avg,
             'aic': model['aic'],
             'aicc': model['aicc'],
             'bic': model['bic'],
