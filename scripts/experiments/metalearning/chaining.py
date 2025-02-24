@@ -32,8 +32,7 @@ y = cv.loc[:, model_names].apply(lambda x: (x <= x.quantile(.05)).astype(int), a
 
 cv.loc[:, model_names].corr()
 # max marginal rel
-# add avg rank on meta-predictors
-## only makes sense with a ranking approach
+
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
 
