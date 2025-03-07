@@ -171,6 +171,6 @@ assets/papers/
 assets/datasets/m4/
 assets/results/
 experiments_extra/
-scripts/experiments/dev/
 extra
 modelradar/
+scripts/experiments/_dev/
