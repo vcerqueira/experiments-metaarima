@@ -6,12 +6,16 @@ from sklearn.multioutput import ClassifierChain
 
 import xgboost as xgb
 
-from src.arima.meta import MetaARIMAUtils, MetaARIMABase
+from src.arima.meta import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
 
 data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
 data_loader = DATASETS[data_name]
+
+TEST_SIZE_UIDS = 0.1
+N_TRIALS = 20
+QUANTILE_THR = 0.1
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
@@ -27,39 +31,36 @@ input_variables = feats.set_index('unique_id').columns.tolist()
 model_names = MetaARIMAUtils.get_models_sf(season_length=12, return_names=True)
 
 X = cv.loc[:, input_variables].fillna(-1)
-y = cv.loc[:, model_names].apply(lambda x: (x <= x.quantile(.05)).astype(int), axis=1)
+y = cv.loc[:, model_names]
 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UIDS)
 
-cv.loc[:, model_names].corr()
-# max marginal rel
-
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
-
-mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=100))
+# mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
 # mod = ClassifierChain(xgb.XGBClassifier())
-mod.fit(X_train, y_train)
+mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=100))
 
-preds = pd.DataFrame(mod.predict_proba(X_test), columns=model_names)
-preds_list = preds.apply(lambda x: x.sort_values().index[:20].tolist(), axis=1)
+meta_arima = MetaARIMA(model=mod,
+                       freq=freq_str,
+                       season_length=freq_int,
+                       n_trials=N_TRIALS,
+                       quantile_thr=QUANTILE_THR)
 
-# preds_list[0]
-# X_test.iloc[0].name
+meta_arima.meta_fit(X_train, y_train)
 
+pred_list = meta_arima.meta_predict(X_test)
 
+results = []
+for i, (uid, x) in enumerate(X_test.iterrows()):
+    print(i, uid)
 
-sc = []
-for i in range(len(preds_list)):
-    print(i)
-
-    uid = X_test.iloc[i].name
     df_uid = train.query(f'unique_id=="{uid}"')
 
-    mod2 = MetaARIMABase(configs=preds_list[i], freq='ME', season_length=12)
-    mod2.fit(df_uid)
-    config_selected = MetaARIMAUtils.get_model_order(mod2.sf.fitted_[0][0].model_, as_alias=True, alias_freq=12)
+    meta_arima.fit(df_uid, config_list=pred_list.values[i])
 
+    mod_ = meta_arima.model.sf.fitted_[0][0]
+
+    config_selected = MetaARIMAUtils.get_model_order(mod_.model_, as_alias=True, alias_freq=12)
     auto_arima_config = cv.loc[uid, 'auto_config']
 
     err_meta = cv.loc[uid, config_selected]
@@ -69,27 +70,21 @@ for i in range(len(preds_list)):
     except KeyError:
         err_auto2 = np.nan
 
-    comp = {'meta': err_meta, 'auto': err_auto, 'auto2': err_auto2}
+    comp = {'MetaARIMA': err_meta,
+            'AutoARIMA': err_auto,
+            'AutoARIMA2': err_auto2,  # what is this?
+            }
 
-    sc.append(comp)
+    results.append(comp)
 
-pd.DataFrame(sc)
+results_df = pd.DataFrame(results)
 
-print(pd.DataFrame(sc).mean())
-print(pd.DataFrame(sc).median())
-print(pd.DataFrame(sc).rank(axis=1).mean())
-print(pd.DataFrame(sc).dropna().mean())
-print(pd.DataFrame(sc).dropna().median())
-print(pd.DataFrame(sc).dropna().rank(axis=1).mean())
-
-print(pd.DataFrame(sc).drop(columns='auto2').mean())
-print(pd.DataFrame(sc).drop(columns='auto2').median())
-print(pd.DataFrame(sc).drop(columns='auto2').rank(axis=1).mean())
-
-
-
-r = pd.DataFrame(sc)
-100 * ((r['meta'] - r['auto']) / r['auto'])
-(100 * ((r['meta'] - r['auto']) / r['auto'])).median()
-
-(r['meta'] - r['auto']).mean()
+print(results_df.mean())
+print(results_df.median())
+print(results_df.rank(axis=1).mean())
+print(results_df.dropna().mean())
+print(results_df.dropna().median())
+print(results_df.dropna().rank(axis=1).mean())
+print(results_df.drop(columns='AutoARIMA2').mean())
+print(results_df.drop(columns='AutoARIMA2').median())
+print(results_df.drop(columns='AutoARIMA2').rank(axis=1).mean())

@@ -10,6 +10,8 @@ from utilsforecast.evaluation import evaluate
 from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
 from src.arima.meta import MetaARIMAUtils
 
+GROUP_IDX=6
+
 data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
 data_loader = DATASETS[data_name]
@@ -23,7 +25,7 @@ models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_M
 # print(len(models))
 
 if __name__ == '__main__':
-    outfile = Path(__file__).parent.parent.parent.parent / 'assets' / 'metadata_cv'
+    outfile = Path(__file__).parent.parent.parent / 'assets' / 'metadata_cv'
 
     results = {}
     df_grouped = train.groupby('unique_id')
@@ -69,18 +71,19 @@ if __name__ == '__main__':
                        **err_auto_,
                        'best_config': best_model_name,
                        'auto_config': arima_config,
+                       'dataset': f'{data_name},{group}',
                        'unique_id': uid}
 
         results[uid] = uid_results
 
         results_df = pd.DataFrame.from_dict(results).T
-        type_dict = {col: float for col in results_df.columns if col not in ['best_config', 'auto_config', 'unique_id']}
+        type_dict = {col: float for col in results_df.columns if col not in ['best_config', 'dataset','auto_config', 'unique_id']}
         results_df = results_df.astype(type_dict)
 
         results_df.to_csv(f'{outfile}/arima,{data_name},{group}.csv', index=False)
 
     results_df = pd.DataFrame.from_dict(results).T
-    type_dict = {col: float for col in results_df.columns if col not in ['best_config', 'auto_config', 'unique_id']}
+    type_dict = {col: float for col in results_df.columns if col not in ['best_config','dataset', 'auto_config', 'unique_id']}
     results_df = results_df.astype(type_dict)
 
     results_df.to_csv(f'{outfile}/arima,{data_name},{group}.csv', index=False)

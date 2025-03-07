@@ -3,6 +3,7 @@ from typing import Optional, List, Dict
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn.multioutput import ClassifierChain
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import jarque_bera
 from statsforecast.models import ARIMA
@@ -156,3 +157,60 @@ class MetaARIMAUtils:
         pvals['no_autocorrelation'] = lb_test.lb_pvalue.values[0]
 
         return pvals
+
+
+class MetaARIMA:
+    # todo compare against other arima implementations
+    # todo eval meta-level
+    # add mmr
+
+    def __init__(self,
+                 model: ClassifierChain,
+                 freq: str,
+                 season_length: int,
+                 n_trials: int,
+                 quantile_thr: float = 0.05):
+        self.meta_model = model
+        self.n_trials = n_trials
+        self.quantile_thr = quantile_thr
+        self.model_names = None
+        self.freq = freq
+        self.season_length = season_length
+        self.model = None
+
+        self.is_fit: bool = False
+
+    def meta_fit(self, X: pd.DataFrame, Y: pd.DataFrame):
+        """
+
+        :param X: feature set
+        :param Y: error scores
+        :return:
+        """
+        y = Y.apply(lambda x: (x <= x.quantile(self.quantile_thr)).astype(int), axis=1)
+        self.model_names = Y.columns.tolist()
+
+        self.meta_model.fit(X, y)
+        self.is_fit = True
+
+    def meta_predict(self, X: pd.DataFrame):
+        assert self.is_fit
+
+        preds = pd.DataFrame(self.meta_model.predict_proba(X), columns=self.model_names)
+
+        preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(), axis=1)
+
+        return preds_list
+
+    def fit(self, df: pd.DataFrame, config_list: List[str]):
+        assert self.is_fit
+
+        self.model = MetaARIMABase(configs=config_list,
+                                   freq=self.freq,
+                                   season_length=self.season_length)
+        self.model.fit(df)
+
+    @classmethod
+    def from_model(cls, n_trials: int):
+        # instance from saved model
+        pass
