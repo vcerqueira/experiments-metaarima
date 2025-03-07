@@ -10,7 +10,7 @@ from utilsforecast.evaluation import evaluate
 from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
 from src.arima.meta import MetaARIMAUtils
 
-GROUP_IDX=6
+GROUP_IDX = 2
 
 data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
@@ -30,6 +30,7 @@ if __name__ == '__main__':
     results = {}
     df_grouped = train.groupby('unique_id')
     for uid, uid_df in df_grouped:
+
         print(data_name, group, uid)
         if uid in results:
             continue
@@ -44,7 +45,10 @@ if __name__ == '__main__':
         arima_config = MetaARIMAUtils.get_model_order(sf_auto.fitted_[0][0].model_, as_alias=True, alias_freq=freq_int)
 
         sf = StatsForecast(models=models, freq=freq_str)
-        sf.fit(df=uid_df)
+        try:
+            sf.fit(df=uid_df)
+        except ValueError:
+            continue
 
         fcst = sf.predict(h=horizon)
         fcst = fcst.merge(test, on=['unique_id', 'ds'], how='left')
@@ -77,13 +81,15 @@ if __name__ == '__main__':
         results[uid] = uid_results
 
         results_df = pd.DataFrame.from_dict(results).T
-        type_dict = {col: float for col in results_df.columns if col not in ['best_config', 'dataset','auto_config', 'unique_id']}
+        type_dict = {col: float for col in results_df.columns if
+                     col not in ['best_config', 'dataset', 'auto_config', 'unique_id']}
         results_df = results_df.astype(type_dict)
 
         results_df.to_csv(f'{outfile}/arima,{data_name},{group}.csv', index=False)
 
     results_df = pd.DataFrame.from_dict(results).T
-    type_dict = {col: float for col in results_df.columns if col not in ['best_config','dataset', 'auto_config', 'unique_id']}
+    type_dict = {col: float for col in results_df.columns if
+                 col not in ['best_config', 'dataset', 'auto_config', 'unique_id']}
     results_df = results_df.astype(type_dict)
 
     results_df.to_csv(f'{outfile}/arima,{data_name},{group}.csv', index=False)
