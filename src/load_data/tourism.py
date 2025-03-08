@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
@@ -7,7 +8,8 @@ from src.load_data.base import LoadDataset
 
 
 class TourismDataset(LoadDataset):
-    DATASET_PATH = 'assets/datasets/tourism/'
+    # DATASET_PATH = Path('assets/datasets/tourism/')
+    DATASET_PATH = Path(__file__).parent.parent.parent / 'assets' / 'datasets' / 'tourism'
     DATASET_NAME = 'T'
 
     horizons_map = {

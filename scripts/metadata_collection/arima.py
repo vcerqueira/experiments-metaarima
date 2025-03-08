@@ -7,12 +7,16 @@ from statsforecast.models import AutoARIMA, SeasonalNaive
 from utilsforecast.losses import smape
 from utilsforecast.evaluation import evaluate
 
-from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
+from src.load_data.config import DATASETS
 from src.arima.meta import MetaARIMAUtils
 
-GROUP_IDX = 2
+# data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Quarterly'
+data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Quarterly'
+# data_name, group = 'M4', 'Monthly'
+# data_name, group = 'M4', 'Quarterly'
 
-data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
