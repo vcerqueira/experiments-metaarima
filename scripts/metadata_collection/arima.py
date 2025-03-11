@@ -28,15 +28,26 @@ ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
 models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_MAX)
 # print(len(models))
 
+PREV_RESULTS_CSV = ['arima,M4,Monthly_.csv']
+
 if __name__ == '__main__':
     outfile = Path(__file__).parent.parent.parent / 'assets' / 'metadata_cv'
+
+    result_files = []
+    for file in PREV_RESULTS_CSV:
+        r = pd.read_csv(f'{outfile}/{file}')
+
+        # result_files.append(r['unique_id'].values.tolist())
+        result_files += r['unique_id'].values.tolist()
+
+    # print(result_files)
 
     results = {}
     df_grouped = train.groupby('unique_id')
     for uid, uid_df in df_grouped:
 
         print(data_name, group, uid)
-        if uid in results:
+        if uid in result_files:
             continue
 
         # df = ds.query('unique_id=="Y1"')

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from datasetsforecast.m4 import M4
 
@@ -5,7 +7,8 @@ from src.load_data.base import LoadDataset
 
 
 class M4Dataset(LoadDataset):
-    DATASET_PATH = 'assets/datasets'
+    # DATASET_PATH = 'assets/datasets'
+    DATASET_PATH = Path(__file__).parent.parent.parent / 'assets' / 'datasets'
     DATASET_NAME = 'M4'
 
     horizons_map = {
