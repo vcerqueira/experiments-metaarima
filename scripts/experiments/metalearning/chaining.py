@@ -9,6 +9,7 @@ import xgboost as xgb
 from src.arima.meta import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
 
+GROUP_IDX=2
 data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
 data_loader = DATASETS[data_name]
@@ -21,7 +22,7 @@ df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
-cv = pd.read_csv('assets/metadata_cv/arima_cv2_M3,Monthly.csv')
+cv = pd.read_csv('assets/metadata_cv/arima,M3,Monthly.csv')
 feats = pd.read_csv('assets/features/train_feature_set_M3,Monthly.csv')
 
 cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')

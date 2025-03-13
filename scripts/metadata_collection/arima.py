@@ -12,9 +12,9 @@ from src.arima.meta import MetaARIMAUtils
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
+data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Quarterly'
 
 print(data_name, group)
@@ -51,8 +51,7 @@ if __name__ == '__main__':
             continue
 
         # df = ds.query('unique_id=="Y1"')
-        sf_auto = StatsForecast(models=[AutoARIMA(),
-                                        SeasonalNaive(season_length=freq_int)],
+        sf_auto = StatsForecast(models=[AutoARIMA(), SeasonalNaive(season_length=freq_int)],
                                 freq=freq_str)
         sf_auto.fit(df=uid_df)
         fcst_auto = sf_auto.predict(h=horizon)
