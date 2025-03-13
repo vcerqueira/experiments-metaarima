@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from statsforecast import StatsForecast
-from statsforecast.models import AutoARIMA, SeasonalNaive
+from statsforecast.models import AutoARIMA, SeasonalNaive, AutoTheta, AutoETS
 from utilsforecast.losses import smape
 from utilsforecast.evaluation import evaluate
 
@@ -26,7 +26,7 @@ train, test = data_loader.train_test_split(df, horizon=horizon)
 
 ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
 models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_MAX)
-# print(len(models))
+print(len(models))
 
 PREV_RESULTS_CSV = ['arima,M4,Monthly_.csv']
 
@@ -51,7 +51,10 @@ if __name__ == '__main__':
             continue
 
         # df = ds.query('unique_id=="Y1"')
-        sf_auto = StatsForecast(models=[AutoARIMA(), SeasonalNaive(season_length=freq_int)],
+        sf_auto = StatsForecast(models=[AutoARIMA(),
+                                        SeasonalNaive(season_length=freq_int),
+                                        AutoETS(season_length=freq_int),
+                                        AutoTheta()],
                                 freq=freq_str)
         sf_auto.fit(df=uid_df)
         fcst_auto = sf_auto.predict(h=horizon)
@@ -72,7 +75,10 @@ if __name__ == '__main__':
         err = evaluate(df=fcst, metrics=[smape]).mean(numeric_only=True)
         err_auto = evaluate(df=fcst_auto, metrics=[smape]).mean(numeric_only=True)
         err_auto_ = {'score_AutoARIMA': err_auto['AutoARIMA'],
-                     'score_SeasNaive': err_auto['SeasonalNaive']}
+                     'score_SeasNaive': err_auto['SeasonalNaive'],
+                     'score_AutoTheta': err_auto['AutoTheta'],
+                     'score_AutoETS': err_auto['AutoETS'],
+                     }
 
         best_model_name = err.sort_values().index[0]
 
