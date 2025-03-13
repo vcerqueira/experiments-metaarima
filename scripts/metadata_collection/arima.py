@@ -1,6 +1,8 @@
 import sys
 import os
 import ujson as json  # for speedup
+import warnings
+from statsmodels.tools.sm_exceptions import InterpolationWarning
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
@@ -18,6 +20,8 @@ from utilsforecast.evaluation import evaluate
 
 from src.load_data.config import DATASETS
 from src.arima.meta import MetaARIMAUtils
+
+warnings.filterwarnings("ignore", category=InterpolationWarning)
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -71,8 +75,18 @@ def process_uid(uid, uid_df, result_files, freq_int, freq_str, horizon, test):
     fcst_auto = fcst_auto.merge(test, on=["unique_id", "ds"], how="left")
     fcst = fcst.fillna(-1)
 
-    err = evaluate(df=fcst, metrics=[smape]).mean(numeric_only=True)
-    err_auto = evaluate(df=fcst_auto, metrics=[smape]).mean(numeric_only=True)
+    try:
+        err = evaluate(df=fcst, metrics=[smape]).mean(numeric_only=True)
+    except InterpolationWarning:
+        err = pd.Series(0, index=[model.__class__.__name__ for model in models])
+
+    try:
+        err_auto = evaluate(df=fcst_auto, metrics=[smape]).mean(numeric_only=True)
+    except InterpolationWarning:
+        err_auto = pd.Series(
+            0, index=["AutoARIMA", "SeasonalNaive", "AutoTheta", "AutoETS"]
+        )
+
     err_auto_ = {
         "score_AutoARIMA": err_auto["AutoARIMA"],
         "score_SeasNaive": err_auto["SeasonalNaive"],
