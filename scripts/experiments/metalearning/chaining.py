@@ -1,15 +1,23 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 from pprint import pprint
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import ClassifierChain
+import warnings
+
+warnings.filterwarnings("ignore")
 
 import xgboost as xgb
 
 from src.arima.meta import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
 
-GROUP_IDX=2
+GROUP_IDX = 6
 data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
 data_loader = DATASETS[data_name]
@@ -22,12 +30,12 @@ df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
-cv = pd.read_csv('assets/metadata_cv/arima,M3,Monthly.csv')
-feats = pd.read_csv('assets/features/train_feature_set_M3,Monthly.csv')
+cv = pd.read_csv("assets/metadata_cv/arima,M4,Monthly.csv")
+feats = pd.read_csv("assets/features/train_feature_set_M4,Monthly.csv")
 
-cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
+cv = cv.merge(feats, on=["unique_id"]).set_index("unique_id")
 
-input_variables = feats.set_index('unique_id').columns.tolist()
+input_variables = feats.set_index("unique_id").columns.tolist()
 
 model_names = MetaARIMAUtils.get_models_sf(season_length=12, return_names=True)
 
@@ -41,11 +49,13 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UI
 # mod = ClassifierChain(xgb.XGBClassifier())
 mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=100))
 
-meta_arima = MetaARIMA(model=mod,
-                       freq=freq_str,
-                       season_length=freq_int,
-                       n_trials=N_TRIALS,
-                       quantile_thr=QUANTILE_THR)
+meta_arima = MetaARIMA(
+    model=mod,
+    freq=freq_str,
+    season_length=freq_int,
+    n_trials=N_TRIALS,
+    quantile_thr=QUANTILE_THR,
+)
 
 meta_arima.meta_fit(X_train, y_train)
 
@@ -61,20 +71,23 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
 
     mod_ = meta_arima.model.sf.fitted_[0][0]
 
-    config_selected = MetaARIMAUtils.get_model_order(mod_.model_, as_alias=True, alias_freq=12)
-    auto_arima_config = cv.loc[uid, 'auto_config']
+    config_selected = MetaARIMAUtils.get_model_order(
+        mod_.model_, as_alias=True, alias_freq=12
+    )
+    auto_arima_config = cv.loc[uid, "auto_config"]
 
     err_meta = cv.loc[uid, config_selected]
-    err_auto = cv.loc[uid, 'score_AutoARIMA']
+    err_auto = cv.loc[uid, "score_AutoARIMA"]
     try:
         err_auto2 = cv.loc[uid, auto_arima_config]
     except KeyError:
         err_auto2 = np.nan
 
-    comp = {'MetaARIMA': err_meta,
-            'AutoARIMA': err_auto,
-            'AutoARIMA2': err_auto2,  # what is this?
-            }
+    comp = {
+        "MetaARIMA": err_meta,
+        "AutoARIMA": err_auto,
+        "AutoARIMA2": err_auto2,  # what is this?
+    }
 
     results.append(comp)
 
@@ -86,6 +99,6 @@ print(results_df.rank(axis=1).mean())
 print(results_df.dropna().mean())
 print(results_df.dropna().median())
 print(results_df.dropna().rank(axis=1).mean())
-print(results_df.drop(columns='AutoARIMA2').mean())
-print(results_df.drop(columns='AutoARIMA2').median())
-print(results_df.drop(columns='AutoARIMA2').rank(axis=1).mean())
+print(results_df.drop(columns="AutoARIMA2").mean())
+print(results_df.drop(columns="AutoARIMA2").median())
+print(results_df.drop(columns="AutoARIMA2").rank(axis=1).mean())

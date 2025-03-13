@@ -16,16 +16,18 @@ class MetaARIMABase:
         self.configs = configs
         self.freq = freq
         self.season_length = season_length
-        self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=self.configs)
+        self.models = MetaARIMAUtils.get_models_sf(
+            season_length=self.season_length, alias_list=self.configs
+        )
         self.n_models = len(self.models)
         self.sf = StatsForecast(models=self.models, freq=self.freq)
 
-        self.alias = 'MetaARIMA'
+        self.alias = "MetaARIMA"
 
     def fit(self, df: pd.DataFrame):
         self.sf.fit(df=df)
 
-        aicc_ = [self.sf.fitted_[0][i].model_['aicc'] for i in range(self.n_models)]
+        aicc_ = [self.sf.fitted_[0][i].model_["aicc"] for i in range(self.n_models)]
 
         best_idx = np.array(aicc_).argmin()
 
@@ -38,32 +40,34 @@ class MetaARIMABase:
 
 class MetaARIMAUtils:
     ORDER_MAX = {
-        'AR': 2,
-        'I': 1,
-        'MA': 2,
-        'S_AR': 1,
-        'S_I': 1,
-        'S_MA': 1,
+        "AR": 2,
+        "I": 1,
+        "MA": 2,
+        "S_AR": 1,
+        "S_I": 1,
+        "S_MA": 1,
     }
 
     @staticmethod
     def get_model_order(mod, as_alias: bool = False, alias_freq=1):
         order = tuple(mod["arma"][i] for i in [0, 5, 1, 2, 6, 3, 4])
 
-        ord = pd.Series(order, index=['AR', 'I', 'MA', 'S_AR', 'S_I', 'S_MA', 'm'])
+        ord = pd.Series(order, index=["AR", "I", "MA", "S_AR", "S_I", "S_MA", "m"])
 
         if as_alias:
-            alias = f'ARIMA({ord[0]},{ord[1]},{ord[2]})({ord[3]},{ord[4]},{ord[5]})[{alias_freq}]'
+            alias = f"ARIMA({ord.iloc[0]},{ord.iloc[1]},{ord.iloc[2]})({ord.iloc[3]},{ord.iloc[4]},{ord.iloc[5]})[{alias_freq}]"
             return alias
 
         return ord
 
     @classmethod
-    def get_models_sf(cls,
-                      season_length: int,
-                      return_names: bool = False,
-                      max_config: Optional[Dict] = None,
-                      alias_list: Optional[List[str]] = None):
+    def get_models_sf(
+        cls,
+        season_length: int,
+        return_names: bool = False,
+        max_config: Optional[Dict] = None,
+        alias_list: Optional[List[str]] = None,
+    ):
 
         if max_config is None:
             max_config_ = cls.ORDER_MAX
@@ -71,17 +75,19 @@ class MetaARIMAUtils:
             max_config_ = max_config
 
         models = []
-        for ar in range(max_config_['AR'] + 1):
-            for i in range(max_config_['I'] + 1):
-                for ma in range(max_config_['MA'] + 1):
-                    for s_ar in range(max_config_['S_AR'] + 1):
-                        for s_i in range(max_config_['S_I'] + 1):
-                            for s_ma in range(max_config_['S_MA'] + 1):
+        for ar in range(max_config_["AR"] + 1):
+            for i in range(max_config_["I"] + 1):
+                for ma in range(max_config_["MA"] + 1):
+                    for s_ar in range(max_config_["S_AR"] + 1):
+                        for s_i in range(max_config_["S_I"] + 1):
+                            for s_ma in range(max_config_["S_MA"] + 1):
                                 models.append(
-                                    ARIMA(order=(ar, i, ma),
-                                          season_length=season_length,
-                                          seasonal_order=(s_ar, s_i, s_ma),
-                                          alias=f'ARIMA({ar},{i},{ma})({s_ar},{s_i},{s_ma})[{season_length}]')
+                                    ARIMA(
+                                        order=(ar, i, ma),
+                                        season_length=season_length,
+                                        seasonal_order=(s_ar, s_i, s_ma),
+                                        alias=f"ARIMA({ar},{i},{ma})({s_ar},{s_i},{s_ma})[{season_length}]",
+                                    )
                                 )
 
         if return_names:
@@ -96,23 +102,22 @@ class MetaARIMAUtils:
     @classmethod
     def model_summary(cls, model):
 
-        coefs = {f'coef_{k}': model['coef'][k]
-                 for k in model['coef']}
+        coefs = {f"coef_{k}": model["coef"][k] for k in model["coef"]}
 
         try:
-            var_coef_avg = model['var_coef'].mean()
+            var_coef_avg = model["var_coef"].mean()
         except AttributeError:
             var_coef_avg = np.nan
 
         goodness_fit = {
-            'var_coef_mean': var_coef_avg,
-            'aic': model['aic'],
-            'aicc': model['aicc'],
-            'bic': model['bic'],
-            'loglik': model['loglik'],
+            "var_coef_mean": var_coef_avg,
+            "aic": model["aic"],
+            "aicc": model["aicc"],
+            "bic": model["bic"],
+            "loglik": model["loglik"],
         }
 
-        resid_tests = cls.test_residuals(model['residuals'])
+        resid_tests = cls.test_residuals(model["residuals"])
 
         mod_summary = {**coefs, **goodness_fit, **resid_tests}
 
@@ -140,21 +145,21 @@ class MetaARIMAUtils:
 
         # Mean test
         mean_test = stats.ttest_1samp(residuals, 0)
-        pvals['zero_mean'] = mean_test.pvalue
+        pvals["zero_mean"] = mean_test.pvalue
 
         # Homoscedasticity test
-        squared_resid = residuals ** 2
+        squared_resid = residuals**2
         trend = np.arange(len(residuals))
         bp_test = stats.linregress(trend, squared_resid)
-        pvals['constant_variance'] = bp_test.pvalue
+        pvals["constant_variance"] = bp_test.pvalue
 
         # Normality test
         jb_test = jarque_bera(residuals)
-        pvals['normality'] = jb_test[1]
+        pvals["normality"] = jb_test[1]
 
         # Autocorrelation test (for lag 1)
         lb_test = acorr_ljungbox(residuals, lags=[1])
-        pvals['no_autocorrelation'] = lb_test.lb_pvalue.values[0]
+        pvals["no_autocorrelation"] = lb_test.lb_pvalue.values[0]
 
         return pvals
 
@@ -164,12 +169,14 @@ class MetaARIMA:
     # todo eval meta-level
     # add mmr
 
-    def __init__(self,
-                 model: ClassifierChain,
-                 freq: str,
-                 season_length: int,
-                 n_trials: int,
-                 quantile_thr: float = 0.05):
+    def __init__(
+        self,
+        model: ClassifierChain,
+        freq: str,
+        season_length: int,
+        n_trials: int,
+        quantile_thr: float = 0.05,
+    ):
         self.meta_model = model
         self.n_trials = n_trials
         self.quantile_thr = quantile_thr
@@ -198,16 +205,18 @@ class MetaARIMA:
 
         preds = pd.DataFrame(self.meta_model.predict_proba(X), columns=self.model_names)
 
-        preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(), axis=1)
+        preds_list = preds.apply(
+            lambda x: x.sort_values().index[: self.n_trials].tolist(), axis=1
+        )
 
         return preds_list
 
     def fit(self, df: pd.DataFrame, config_list: List[str]):
         assert self.is_fit
 
-        self.model = MetaARIMABase(configs=config_list,
-                                   freq=self.freq,
-                                   season_length=self.season_length)
+        self.model = MetaARIMABase(
+            configs=config_list, freq=self.freq, season_length=self.season_length
+        )
         self.model.fit(df)
 
     @classmethod
