@@ -32,7 +32,7 @@ class M4Dataset(LoadDataset):
     }
 
     frequency_pd = {
-        "Quarterly": "Q",
+        "Quarterly": "QE",
         "Monthly": "ME",
     }
 

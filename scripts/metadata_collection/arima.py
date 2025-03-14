@@ -1,16 +1,15 @@
 import sys
 import os
-import ujson as json  # for speedup
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import warnings
 from statsmodels.tools.sm_exceptions import InterpolationWarning
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from scipy.optimize import OptimizeWarning
 
 os.environ["NIXTLA_ID_AS_COL"] = "1"
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from pprint import pprint
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
 from statsforecast import StatsForecast
@@ -21,20 +20,18 @@ from utilsforecast.evaluation import evaluate
 from src.load_data.config import DATASETS
 from src.arima.meta import MetaARIMAUtils
 
-warnings.filterwarnings("ignore", category=InterpolationWarning)
-
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
+# data_name, group = "Tourism", "Monthly"
 # data_name, group = 'Tourism', 'Quarterly'
 data_name, group = "M4", "Monthly"
 # data_name, group = 'M4', 'Quarterly'
+
 
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
-
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
 ORDER_MAX = {"AR": 4, "I": 1, "MA": 4, "S_AR": 1, "S_I": 1, "S_MA": 1}
@@ -44,26 +41,44 @@ print(len(models))
 PREV_RESULTS_CSV = ["arima,M4,Monthly_.csv"]
 
 
-def process_uid(uid, uid_df, result_files, freq_int, freq_str, horizon, test):
+def process_series(uid_df_pair):
+    """
+    Function to process a single series (unique_id) in parallel.
+    """
+    uid, uid_df = uid_df_pair
+
+    print(data_name, group, uid)
     if uid in result_files:
         return None
 
-    sf_auto = StatsForecast(
-        models=[
-            AutoARIMA(),
-            SeasonalNaive(season_length=freq_int),
-            AutoETS(season_length=freq_int),
-            AutoTheta(),
-        ],
-        freq=freq_str,
-    )
-    sf_auto.fit(df=uid_df)
-    fcst_auto = sf_auto.predict(h=horizon)
+    try:
+        sf_auto = StatsForecast(
+            models=[
+                # AutoARIMA(),
+                SeasonalNaive(season_length=freq_int),
+                AutoETS(season_length=freq_int),
+                AutoTheta(),
+            ],
+            freq=freq_str,
+        )
 
-    arima_config = MetaARIMAUtils.get_model_order(
-        sf_auto.fitted_[0][0].model_, as_alias=True, alias_freq=freq_int
-    )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=InterpolationWarning)
+            warnings.filterwarnings("ignore", category=OptimizeWarning)
+            sf_auto.fit(df=uid_df)
 
+        fcst_auto = sf_auto.predict(h=horizon)
+
+        arima_config = MetaARIMAUtils.get_model_order(
+            sf_auto.fitted_[0][0].model_, as_alias=True, alias_freq=freq_int
+        )
+
+    except InterpolationWarning:
+        print(f"Skipping series {uid} due to InterpolationWarning.")
+        return None
+    except Exception as e:
+        print(f"Error processing {uid}: {e}")
+        return None
     sf = StatsForecast(models=models, freq=freq_str)
     try:
         sf.fit(df=uid_df)
@@ -71,21 +86,13 @@ def process_uid(uid, uid_df, result_files, freq_int, freq_str, horizon, test):
         return None
 
     fcst = sf.predict(h=horizon)
+
     fcst = fcst.merge(test, on=["unique_id", "ds"], how="left")
     fcst_auto = fcst_auto.merge(test, on=["unique_id", "ds"], how="left")
     fcst = fcst.fillna(-1)
 
-    try:
-        err = evaluate(df=fcst, metrics=[smape]).mean(numeric_only=True)
-    except InterpolationWarning:
-        err = pd.Series(0, index=[model.__class__.__name__ for model in models])
-
-    try:
-        err_auto = evaluate(df=fcst_auto, metrics=[smape]).mean(numeric_only=True)
-    except InterpolationWarning:
-        err_auto = pd.Series(
-            0, index=["AutoARIMA", "SeasonalNaive", "AutoTheta", "AutoETS"]
-        )
+    err = evaluate(df=fcst, metrics=[smape]).mean(numeric_only=True)
+    err_auto = evaluate(df=fcst_auto, metrics=[smape]).mean(numeric_only=True)
 
     err_auto_ = {
         "score_AutoARIMA": err_auto["AutoARIMA"],
@@ -95,7 +102,7 @@ def process_uid(uid, uid_df, result_files, freq_int, freq_str, horizon, test):
     }
 
     best_model_name = err.sort_values().index[0]
-    best_model = sf.fitted_.flatten()[err.iloc[0]]
+    best_model = sf.fitted_.flatten()[err.argmin()]
 
     mod_summary = MetaARIMAUtils.model_summary(best_model.model_)
 
@@ -117,39 +124,49 @@ if __name__ == "__main__":
 
     result_files = []
     for file in PREV_RESULTS_CSV:
-        r = pd.read_csv(f"{outfile}/{file}")
-        result_files += r["unique_id"].values.tolist()
+        file_path = outfile / file
+        if file_path.exists():
+            r = pd.read_csv(file_path)
+            result_files += r["unique_id"].values.tolist()
 
     results = {}
+
     df_grouped = train.groupby("unique_id")
 
-    max_workers = os.cpu_count()  # available CPU cores
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(
-                process_uid,
-                uid,
-                uid_df,
-                result_files,
-                freq_int,
-                freq_str,
-                horizon,
-                test,
-            ): uid
+    with ThreadPoolExecutor() as executor:
+        future_to_uid_results = {
+            executor.submit(process_series, (uid, uid_df)): uid
             for uid, uid_df in df_grouped
         }
 
-        for future in as_completed(futures):
-            uid_results = future.result()
-            if uid_results:
-                results[uid_results["unique_id"]] = uid_results
+        for future in as_completed(future_to_uid_results):
+            uid = future_to_uid_results[future]
+            try:
+                result = future.result()
+                if result is not None:
+                    results[uid] = result
+            except Exception as e:
+                print(f"Error processing {uid}: {e}")
 
-    results_df = pd.DataFrame.from_dict(results).T
-    type_dict = {
-        col: float
-        for col in results_df.columns
-        if col not in ["best_config", "dataset", "auto_config", "unique_id"]
-    }
-    results_df = results_df.astype(type_dict)
 
-    results_df.to_csv(f"{outfile}/arima,{data_name},{group}.csv", index=False)
+results_df_final = pd.DataFrame.from_dict(results).T
+
+type_dict_final = {
+    col: float
+    for col in results_df_final.columns
+    if col not in ["best_config", "dataset", "auto_config", "unique_id"]
+}
+results_df_final = results_df_final.astype(type_dict_final)
+
+if not results_df_final.empty:
+    output_file_final = outfile / f"arima,{data_name},{group}.csv"
+
+    try:
+        output_file_final.parent.mkdir(parents=True, exist_ok=True)
+        results_df_final.to_csv(output_file_final, index=False)
+        print(f"Results saved successfully to {output_file_final}")
+
+    except Exception as e:
+        print(f"Error saving final results: {e}")
+else:
+    print("Warning: No data to save!")

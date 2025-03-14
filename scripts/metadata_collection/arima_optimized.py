@@ -41,16 +41,11 @@ if __name__ == "__main__":
     result_files = []
     for file in PREV_RESULTS_CSV:
         r = pd.read_csv(outfile / file)
-
-        # result_files.append(r['unique_id'].values.tolist())
         result_files += r["unique_id"].values.tolist()
-
-    # print(result_files)
 
     results = {}
     df_grouped = train.groupby("unique_id")
     for uid, uid_df in df_grouped:
-
         print(data_name, group, uid)
         if uid in result_files:
             continue
@@ -112,24 +107,25 @@ if __name__ == "__main__":
             "unique_id": uid,
         }
 
-        results[uid] = uid_results
+        # Store results
+        results[uid] = uid_results.copy()
 
-        results_df = pd.DataFrame.from_dict(results).T
+        # Optimized DataFrame construction
+        results_df = pd.DataFrame.from_dict(results, orient="index")  # Changed here
         type_dict = {
             col: float
             for col in results_df.columns
             if col not in ["best_config", "dataset", "auto_config", "unique_id"]
         }
         results_df = results_df.astype(type_dict)
-
         results_df.to_csv(outfile / f"arima,{data_name},{group}.csv", index=False)
 
-    results_df = pd.DataFrame.from_dict(results).T
+    # Final optimized DataFrame construction
+    results_df = pd.DataFrame.from_dict(results, orient="index")  # Changed here
     type_dict = {
         col: float
         for col in results_df.columns
         if col not in ["best_config", "dataset", "auto_config", "unique_id"]
     }
     results_df = results_df.astype(type_dict)
-
     results_df.to_csv(outfile / f"arima,{data_name},{group}.csv", index=False)
