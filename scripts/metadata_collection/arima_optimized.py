@@ -2,6 +2,10 @@ import os
 import sys
 import logging
 
+import warnings
+
+warnings.filterwarnings("ignore")
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -21,9 +25,8 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 os.environ["NIXTLA_ID_AS_COL"] = "1"
 
-# Set up logging
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 
@@ -31,8 +34,7 @@ def process_series(
     uid, uid_df, test, freq_str, freq_int, horizon, models, data_name, group
 ):
     """Function to process a single time series"""
-    logging.info(f"Processing unique_id: {uid}")
-    logging.debug(f"Processing series: {uid}")
+    logging.info(f"Processing series: {uid}")
 
     sf_auto = StatsForecast(
         models=[
@@ -45,7 +47,7 @@ def process_series(
     )
     sf_auto.fit(df=uid_df)
     fcst_auto = sf_auto.predict(h=horizon)
-    logging.debug(f"AutoARIMA forecast completed for series: {uid}")
+    logging.info(f"AutoARIMA forecast completed for series: {uid}")
 
     arima_config = MetaARIMAUtils.get_model_order(
         sf_auto.fitted_[0][0].model_, as_alias=True, alias_freq=freq_int
@@ -62,7 +64,7 @@ def process_series(
     fcst = fcst.merge(test, on=["unique_id", "ds"], how="left")
     fcst_auto = fcst_auto.merge(test, on=["unique_id", "ds"], how="left")
     fcst = fcst.fillna(-1)
-    logging.debug(f"Forecast completed for series: {uid}")
+    logging.info(f"Forecast completed for series: {uid}")
 
     err = evaluate(df=fcst, metrics=[smape]).mean(numeric_only=True)
     err_auto = evaluate(df=fcst_auto, metrics=[smape]).mean(numeric_only=True)
@@ -76,9 +78,9 @@ def process_series(
     best_model_name = err.sort_values().index[0]
     best_model = sf.fitted_.flatten()[err.argmin()]
     mod_summary = MetaARIMAUtils.model_summary(best_model.model_)
-    logging.debug(f"Model summary for best model of series {uid}: {mod_summary}")
+    logging.info(f"Model summary for best model of series {uid}: {mod_summary}")
 
-    logging.debug(f"Finished processing series: {uid}")
+    logging.info(f"Finished processing series: {uid}")
     return {
         "uid": uid,
         "results": {
@@ -94,7 +96,13 @@ def process_series(
 
 
 if __name__ == "__main__":  # REQUIRED for multiprocessing
+    # data_name, group = 'M3', 'Monthly'
+    # data_name, group = 'M3', 'Quarterly'
+    # data_name, group = 'Tourism', 'Monthly'
+    # data_name, group = 'Tourism', 'Quarterly'
     data_name, group = "M4", "Monthly"
+    # data_name, group = 'M4', 'Quarterly'
+
     logging.info(f"Starting processing for dataset: {data_name}, group: {group}")
 
     data_loader = DATASETS[data_name]
@@ -121,25 +129,26 @@ if __name__ == "__main__":  # REQUIRED for multiprocessing
     df_grouped = train.groupby("unique_id")
     results = {}
 
-    # Use ProcessPoolExecutor for parallel execution
-    max_workers = os.cpu_count()
-    logging.info(f"Using {max_workers} workers for parallel processing")
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future_to_uid = {
-            executor.submit(
-                process_series,
-                uid,
-                uid_df,
-                test,
-                freq_str,
-                freq_int,
-                horizon,
-                models,
-                data_name,
-                group,
-            ): uid
-            for uid, uid_df in df_grouped
-        }
+    with ProcessPoolExecutor() as executor:
+        future_to_uid = {}
+        for uid, uid_df in df_grouped:
+            if uid in result_files:
+                logging.info(f"Skipping unique_id: {uid} as it is already processed")
+                continue
+            future_to_uid[
+                executor.submit(
+                    process_series,
+                    uid,
+                    uid_df,
+                    test,
+                    freq_str,
+                    freq_int,
+                    horizon,
+                    models,
+                    data_name,
+                    group,
+                )
+            ] = uid
 
         for future in as_completed(future_to_uid):
             uid = future_to_uid[future]
@@ -147,11 +156,10 @@ if __name__ == "__main__":  # REQUIRED for multiprocessing
                 result = future.result()
                 if result:
                     results[result["uid"]] = result["results"]
-                    logging.debug(f"Result collected for series: {uid}")
+                    logging.info(f"Result collected for series: {uid}")
             except Exception as e:
                 logging.error(f"Error processing series {uid}: {e}")
 
-    # Save results
     results_df = pd.DataFrame.from_dict(results, orient="index")
     type_dict = {
         col: float

@@ -3,10 +3,14 @@ import os
 import logging
 from pathlib import Path
 
-# Configure logging
+import warnings
+
+warnings.filterwarnings("ignore")
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
 
 os.environ["NIXTLA_ID_AS_COL"] = "1"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
