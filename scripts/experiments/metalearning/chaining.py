@@ -18,9 +18,11 @@ data_name, group = 'M3', 'Monthly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
-TEST_SIZE_UIDS = 0.2
-N_TRIALS = 20
+TEST_SIZE_UIDS = 0.1
+N_TRIALS = 30
 QUANTILE_THR = 0.1
+N_ESTIMATORS = 100
+MMR = True
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
@@ -40,51 +42,68 @@ y = cv.loc[:, model_names]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UIDS)
 
-# corr_mat = y_train.corr()
-
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
 # mod = ClassifierChain(xgb.XGBClassifier())
-mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=100))
+mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=N_ESTIMATORS))
 
 meta_arima = MetaARIMA(model=mod,
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
                        quantile_thr=QUANTILE_THR,
-                       use_mmr=True)
+                       use_mmr=False)
+
+meta_arima_mmr = MetaARIMA(model=mod,
+                           freq=freq_str,
+                           season_length=freq_int,
+                           n_trials=N_TRIALS,
+                           quantile_thr=QUANTILE_THR,
+                           use_mmr=MMR)
 
 meta_arima.meta_fit(X_train, y_train)
+meta_arima_mmr.meta_fit(X_train, y_train)
 
 pred_list = meta_arima.meta_predict(X_test)
+pred_list_mmr = meta_arima_mmr.meta_predict(X_test)
 
 results = []
 for i, (uid, x) in enumerate(X_test.iterrows()):
     print(i, uid)
+    # if i > 5:
+    #     break
 
     df_uid = train.query(f'unique_id=="{uid}"')
 
     # meta_arima.fit(df_uid, config_list=pred_list.values[i])
     meta_arima.fit(df_uid, config_list=pred_list[i])
-
     mod_ = meta_arima.model.sf.fitted_[0][0]
-
     config_selected = MetaARIMAUtils.get_model_order(mod_.model_,
                                                      as_alias=True,
                                                      alias_freq=freq_int)
+
+    meta_arima.fit(df_uid, config_list=pred_list_mmr[i])
+    mod_ = meta_arima.model.sf.fitted_[0][0]
+    config_selected_mrr = MetaARIMAUtils.get_model_order(mod_.model_,
+                                                         as_alias=True,
+                                                         alias_freq=freq_int)
+
     auto_arima_config = cv.loc[uid, 'auto_config']
 
     err_meta = cv.loc[uid, config_selected]
+    err_meta_mmr = cv.loc[uid, config_selected_mrr]
     err_auto = cv.loc[uid, 'score_AutoARIMA']
     try:
         err_auto2 = cv.loc[uid, auto_arima_config]
     except KeyError:
         err_auto2 = np.nan
 
-    comp = {'MetaARIMA': err_meta,
-            'AutoARIMA': err_auto,
-            'AutoARIMA2': err_auto2,  # what is this?
-            }
+    comp = {
+        'MetaARIMA': err_meta,
+        'MetaARIMA(MMR)': err_meta_mmr,
+        'AutoARIMA': err_auto,
+        'AutoARIMA2': err_auto2,  # what is this?
+    }
 
     results.append(comp)
 

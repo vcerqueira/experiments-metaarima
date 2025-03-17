@@ -212,7 +212,7 @@ class MetaARIMA:
                 selected_indices = mmr_selection(
                     probabilities=meta_pred,
                     correlation_matrix=self.corr_mat,
-                    lambda_param=.5,
+                    lambda_param=.75,
                     top_k=self.n_trials
                 )
 
