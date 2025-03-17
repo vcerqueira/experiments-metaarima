@@ -169,7 +169,8 @@ class MetaARIMA:
                  freq: str,
                  season_length: int,
                  n_trials: int,
-                 quantile_thr: float = 0.05):
+                 quantile_thr: float = 0.05,
+                 use_mmr: bool=False):
         self.meta_model = model
         self.n_trials = n_trials
         self.quantile_thr = quantile_thr
@@ -177,6 +178,8 @@ class MetaARIMA:
         self.freq = freq
         self.season_length = season_length
         self.model = None
+        self.corr_mat = None
+        self.use_mmr = use_mmr
 
         self.is_fit: bool = False
 
@@ -189,6 +192,8 @@ class MetaARIMA:
         """
         y = Y.apply(lambda x: (x <= x.quantile(self.quantile_thr)).astype(int), axis=1)
         self.model_names = Y.columns.tolist()
+        if self.use_mmr:
+            self.corr_mat = compute_correlation_matrix(Y)
 
         self.meta_model.fit(X, y)
         self.is_fit = True
@@ -214,3 +219,132 @@ class MetaARIMA:
     def from_model(cls, n_trials: int):
         # instance from saved model
         pass
+
+    def select_diverse_top_models(self, X, lambda_param=0.5, top_k=10):
+        """
+        End-to-end function to select diverse top-performing model configurations
+        for a new dataset using MMR.
+
+        Parameters:
+        -----------
+        X_train : array-like, shape (n_datasets, n_meta_features)
+            Meta-features of the training datasets.
+        y_train : array-like, shape (n_datasets, n_configurations)
+            The performance of each model configuration across different training datasets.
+        meta_model : object
+            A fitted meta-learning model with a predict_proba method that predicts
+            the probability of a configuration being in the top 10%.
+        X_new : array-like, shape (1, n_meta_features)
+            Meta-features of the new dataset.
+        lambda_param : float, default=0.5
+            Trade-off between probability and diversity. Higher values favor probability.
+        top_k : int, default=10
+            Number of configurations to recommend.
+
+        Returns:
+        --------
+        selected_indices : list
+            Indices of the selected model configurations.
+        """
+        # Compute correlation matrix from training performance data
+
+        # Predict probabilities for the new dataset
+        probabilities = self.predict_proba(X_new)[0]  # Assuming binary classification
+
+        # Select diverse configurations using MMR
+        selected_indices = mmr_selection(
+            probabilities,
+            correlation_matrix,
+            lambda_param=lambda_param,
+            top_k=top_k
+        )
+
+        return selected_indices
+
+
+def compute_correlation_matrix(y_train):
+    """
+    Compute the correlation matrix between model configurations based on their performance across datasets.
+
+    Parameters:
+    -----------
+    y_train : array-like, shape (n_datasets, n_configurations)
+        The performance of each model configuration across different datasets.
+
+    Returns:
+    --------
+    corr_matrix : array-like, shape (n_configurations, n_configurations)
+        The correlation matrix between model configurations.
+    """
+    # Transpose y_train to have shape (n_configurations, n_datasets)
+    # This allows us to compute correlations between configurations
+    y_train_transposed = y_train.T
+
+    # Compute correlation matrix
+    corr_matrix = np.corrcoef(y_train_transposed)
+    return corr_matrix
+
+
+def mmr_selection(probabilities, correlation_matrix, lambda_param=0.5, top_k=10):
+    """
+    Select configurations using Maximal Marginal Relevance to balance between
+    probability of being in the top 10% and diversity (low correlation with already selected configurations).
+
+    Parameters:
+    -----------
+    probabilities : array-like, shape (n_configurations,)
+        The predicted probabilities of each configuration being in the top 10%.
+    correlation_matrix : array-like, shape (n_configurations, n_configurations)
+        The correlation matrix between configurations.
+    lambda_param : float, default=0.5
+        The trade-off parameter. Higher values favor probability, lower values favor diversity.
+        Range: [0, 1]
+    top_k : int, default=10
+        The number of configurations to select.
+
+    Returns:
+    --------
+    selected_indices : list
+        Indices of the selected configurations.
+    """
+    n_configs = len(probabilities)
+
+    # Ensure lambda is within valid range
+    lambda_param = max(0, min(1, lambda_param))
+
+    # Initialize the list of selected configurations
+    selected_indices = []
+
+    # Set of remaining candidates
+    remaining_indices = set(range(n_configs))
+
+    # Select the first configuration (highest probability)
+    best_idx = np.argmax(probabilities)
+    selected_indices.append(best_idx)
+    remaining_indices.remove(best_idx)
+
+    # Select the rest using MMR
+    while len(selected_indices) < top_k and remaining_indices:
+        max_mmr_score = -float('inf')
+        next_best_idx = None
+
+        for idx in remaining_indices:
+            # Compute the maximum correlation with already selected configurations
+            max_correlation = max([correlation_matrix[idx, sel_idx] for sel_idx in selected_indices])
+
+            # Compute MMR score
+            # High lambda: favor high probability
+            # Low lambda: favor low correlation (diversity)
+            mmr_score = lambda_param * probabilities[idx] - (1 - lambda_param) * max_correlation
+
+            if mmr_score > max_mmr_score:
+                max_mmr_score = mmr_score
+                next_best_idx = idx
+
+        if next_best_idx is not None:
+            selected_indices.append(next_best_idx)
+            remaining_indices.remove(next_best_idx)
+        else:
+            break
+
+    return selected_indices

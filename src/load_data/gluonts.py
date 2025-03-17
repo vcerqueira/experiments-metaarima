@@ -6,7 +6,7 @@ from gluonts.dataset.repository.datasets import get_dataset, dataset_names
 from src.load_data.base import LoadDataset
 
 
-# pprint(dataset_names)
+pprint(dataset_names)
 
 class GluontsDataset(LoadDataset):
     DATASET_NAME = 'GLUONTS'

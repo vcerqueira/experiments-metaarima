@@ -7,34 +7,43 @@ from sklearn.multioutput import ClassifierChain
 import xgboost as xgb
 
 from src.arima.meta import MetaARIMAUtils, MetaARIMA
-from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
+from src.load_data.config import DATASETS
 
-GROUP_IDX=2
-data_name, group = DATA_GROUPS[GROUP_IDX]
+# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Quarterly'
+# data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Quarterly'
+# data_name, group = 'M4', 'Monthly'
+# data_name, group = 'M4', 'Quarterly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
-TEST_SIZE_UIDS = 0.1
+TEST_SIZE_UIDS = 0.2
 N_TRIALS = 20
-QUANTILE_THR = 0.1
+QUANTILE_THR = 0.15
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
-cv = pd.read_csv('assets/metadata_cv/arima,M3,Monthly.csv')
-feats = pd.read_csv('assets/features/train_feature_set_M3,Monthly.csv')
+cv = pd.read_csv(f'assets/metadata_cv/arima,{data_name},{group}.csv')
+feats = pd.read_csv(f'assets/features/features,{data_name},{group}.csv')
 
 cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
 
 input_variables = feats.set_index('unique_id').columns.tolist()
 
-model_names = MetaARIMAUtils.get_models_sf(season_length=12, return_names=True)
+model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int, return_names=True)
 
 X = cv.loc[:, input_variables].fillna(-1)
 y = cv.loc[:, model_names]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UIDS)
+
+
+y_train.corr()
+
+
 
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
@@ -61,7 +70,9 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
 
     mod_ = meta_arima.model.sf.fitted_[0][0]
 
-    config_selected = MetaARIMAUtils.get_model_order(mod_.model_, as_alias=True, alias_freq=12)
+    config_selected = MetaARIMAUtils.get_model_order(mod_.model_,
+                                                     as_alias=True,
+                                                     alias_freq=freq_int)
     auto_arima_config = cv.loc[uid, 'auto_config']
 
     err_meta = cv.loc[uid, config_selected]
