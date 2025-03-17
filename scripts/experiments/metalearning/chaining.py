@@ -9,8 +9,8 @@ import xgboost as xgb
 from src.arima.meta import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS
 
-# data_name, group = 'M3', 'Monthly'
-data_name, group = 'M3', 'Quarterly'
+data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
@@ -20,7 +20,7 @@ data_loader = DATASETS[data_name]
 
 TEST_SIZE_UIDS = 0.2
 N_TRIALS = 20
-QUANTILE_THR = 0.15
+QUANTILE_THR = 0.1
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
@@ -45,7 +45,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UI
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
 # mod = ClassifierChain(xgb.XGBClassifier())
-mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=10))
+mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=100))
 
 meta_arima = MetaARIMA(model=mod,
                        freq=freq_str,
@@ -55,30 +55,6 @@ meta_arima = MetaARIMA(model=mod,
                        use_mmr=True)
 
 meta_arima.meta_fit(X_train, y_train)
-
-meta_preds = meta_arima.meta_model.predict_proba(X)
-meta_preds = [pd.Series(x, index=meta_arima.model_names) for x in meta_preds]
-
-meta_preds_list =[]
-for i, meta_pred in enumerate(meta_preds):
-    print(i)
-
-    selected_indices = mmr_selection(
-        probabilities=meta_pred,
-        correlation_matrix=corr_mat,
-        lambda_param=.5,
-        top_k=5
-    )
-
-    mod_list = meta_pred.index[selected_indices].tolist()
-
-    meta_preds_list.append(mod_list)
-
-
-
-preds = pd.DataFrame(meta_arima.meta_model.predict_proba(X), columns=self.model_names)
-
-preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(), axis=1)
 
 pred_list = meta_arima.meta_predict(X_test)
 
