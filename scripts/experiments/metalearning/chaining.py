@@ -40,23 +40,45 @@ y = cv.loc[:, model_names]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UIDS)
 
-
-y_train.corr()
-
-
+# corr_mat = y_train.corr()
 
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
 # mod = ClassifierChain(xgb.XGBClassifier())
-mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=100))
+mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=10))
 
 meta_arima = MetaARIMA(model=mod,
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
-                       quantile_thr=QUANTILE_THR)
+                       quantile_thr=QUANTILE_THR,
+                       use_mmr=True)
 
 meta_arima.meta_fit(X_train, y_train)
+
+meta_preds = meta_arima.meta_model.predict_proba(X)
+meta_preds = [pd.Series(x, index=meta_arima.model_names) for x in meta_preds]
+
+meta_preds_list =[]
+for i, meta_pred in enumerate(meta_preds):
+    print(i)
+
+    selected_indices = mmr_selection(
+        probabilities=meta_pred,
+        correlation_matrix=corr_mat,
+        lambda_param=.5,
+        top_k=5
+    )
+
+    mod_list = meta_pred.index[selected_indices].tolist()
+
+    meta_preds_list.append(mod_list)
+
+
+
+preds = pd.DataFrame(meta_arima.meta_model.predict_proba(X), columns=self.model_names)
+
+preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(), axis=1)
 
 pred_list = meta_arima.meta_predict(X_test)
 
@@ -66,7 +88,8 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
 
     df_uid = train.query(f'unique_id=="{uid}"')
 
-    meta_arima.fit(df_uid, config_list=pred_list.values[i])
+    # meta_arima.fit(df_uid, config_list=pred_list.values[i])
+    meta_arima.fit(df_uid, config_list=pred_list[i])
 
     mod_ = meta_arima.model.sf.fitted_[0][0]
 

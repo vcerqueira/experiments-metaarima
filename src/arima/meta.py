@@ -170,7 +170,7 @@ class MetaARIMA:
                  season_length: int,
                  n_trials: int,
                  quantile_thr: float = 0.05,
-                 use_mmr: bool=False):
+                 use_mmr: bool = False):
         self.meta_model = model
         self.n_trials = n_trials
         self.quantile_thr = quantile_thr
@@ -193,19 +193,39 @@ class MetaARIMA:
         y = Y.apply(lambda x: (x <= x.quantile(self.quantile_thr)).astype(int), axis=1)
         self.model_names = Y.columns.tolist()
         if self.use_mmr:
-            self.corr_mat = compute_correlation_matrix(Y)
+            # self.corr_mat = compute_correlation_matrix(Y)
+            self.corr_mat = Y.corr()
 
         self.meta_model.fit(X, y)
         self.is_fit = True
 
-    def meta_predict(self, X: pd.DataFrame):
+    def meta_predict(self, X):
         assert self.is_fit
 
-        preds = pd.DataFrame(self.meta_model.predict_proba(X), columns=self.model_names)
+        if self.use_mmr:
 
-        preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(), axis=1)
+            meta_preds = self.meta_model.predict_proba(X)
+            meta_preds = [pd.Series(x, index=self.model_names) for x in meta_preds]
 
-        return preds_list
+            meta_preds_list = []
+            for i, meta_pred in enumerate(meta_preds):
+                selected_indices = mmr_selection(
+                    probabilities=meta_pred,
+                    correlation_matrix=self.corr_mat,
+                    lambda_param=.5,
+                    top_k=self.n_trials
+                )
+
+                mod_list = meta_pred.index[selected_indices].tolist()
+
+                meta_preds_list.append(mod_list)
+        else:
+            preds = pd.DataFrame(self.meta_model.predict_proba(X), columns=self.model_names)
+
+            meta_preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(),
+                                          axis=1).values.tolist()
+
+        return meta_preds_list
 
     def fit(self, df: pd.DataFrame, config_list: List[str]):
         assert self.is_fit
@@ -219,70 +239,6 @@ class MetaARIMA:
     def from_model(cls, n_trials: int):
         # instance from saved model
         pass
-
-    def select_diverse_top_models(self, X, lambda_param=0.5, top_k=10):
-        """
-        End-to-end function to select diverse top-performing model configurations
-        for a new dataset using MMR.
-
-        Parameters:
-        -----------
-        X_train : array-like, shape (n_datasets, n_meta_features)
-            Meta-features of the training datasets.
-        y_train : array-like, shape (n_datasets, n_configurations)
-            The performance of each model configuration across different training datasets.
-        meta_model : object
-            A fitted meta-learning model with a predict_proba method that predicts
-            the probability of a configuration being in the top 10%.
-        X_new : array-like, shape (1, n_meta_features)
-            Meta-features of the new dataset.
-        lambda_param : float, default=0.5
-            Trade-off between probability and diversity. Higher values favor probability.
-        top_k : int, default=10
-            Number of configurations to recommend.
-
-        Returns:
-        --------
-        selected_indices : list
-            Indices of the selected model configurations.
-        """
-        # Compute correlation matrix from training performance data
-
-        # Predict probabilities for the new dataset
-        probabilities = self.predict_proba(X_new)[0]  # Assuming binary classification
-
-        # Select diverse configurations using MMR
-        selected_indices = mmr_selection(
-            probabilities,
-            correlation_matrix,
-            lambda_param=lambda_param,
-            top_k=top_k
-        )
-
-        return selected_indices
-
-
-def compute_correlation_matrix(y_train):
-    """
-    Compute the correlation matrix between model configurations based on their performance across datasets.
-
-    Parameters:
-    -----------
-    y_train : array-like, shape (n_datasets, n_configurations)
-        The performance of each model configuration across different datasets.
-
-    Returns:
-    --------
-    corr_matrix : array-like, shape (n_configurations, n_configurations)
-        The correlation matrix between model configurations.
-    """
-    # Transpose y_train to have shape (n_configurations, n_datasets)
-    # This allows us to compute correlations between configurations
-    y_train_transposed = y_train.T
-
-    # Compute correlation matrix
-    corr_matrix = np.corrcoef(y_train_transposed)
-    return corr_matrix
 
 
 def mmr_selection(probabilities, correlation_matrix, lambda_param=0.5, top_k=10):
@@ -330,12 +286,12 @@ def mmr_selection(probabilities, correlation_matrix, lambda_param=0.5, top_k=10)
 
         for idx in remaining_indices:
             # Compute the maximum correlation with already selected configurations
-            max_correlation = max([correlation_matrix[idx, sel_idx] for sel_idx in selected_indices])
+            max_correlation = max([correlation_matrix.iloc[idx, sel_idx] for sel_idx in selected_indices])
 
             # Compute MMR score
             # High lambda: favor high probability
             # Low lambda: favor low correlation (diversity)
-            mmr_score = lambda_param * probabilities[idx] - (1 - lambda_param) * max_correlation
+            mmr_score = lambda_param * probabilities.iloc[idx] - (1 - lambda_param) * max_correlation
 
             if mmr_score > max_mmr_score:
                 max_mmr_score = mmr_score
