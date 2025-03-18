@@ -170,6 +170,7 @@ class MetaARIMA:
                  season_length: int,
                  n_trials: int,
                  quantile_thr: float = 0.05,
+                 mmr_lambda: float = 0.75,
                  use_mmr: bool = False):
         self.meta_model = model
         self.n_trials = n_trials
@@ -180,6 +181,7 @@ class MetaARIMA:
         self.model = None
         self.corr_mat = None
         self.use_mmr = use_mmr
+        self.mmr_lambda = mmr_lambda
 
         self.is_fit: bool = False
 
@@ -205,6 +207,9 @@ class MetaARIMA:
         if self.use_mmr:
 
             meta_preds = self.meta_model.predict_proba(X)
+            if isinstance(meta_preds, list):
+                meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
+
             meta_preds = [pd.Series(x, index=self.model_names) for x in meta_preds]
 
             meta_preds_list = []
@@ -212,7 +217,7 @@ class MetaARIMA:
                 selected_indices = mmr_selection(
                     probabilities=meta_pred,
                     correlation_matrix=self.corr_mat,
-                    lambda_param=.75,
+                    lambda_param=self.mmr_lambda,
                     top_k=self.n_trials
                 )
 
@@ -220,7 +225,11 @@ class MetaARIMA:
 
                 meta_preds_list.append(mod_list)
         else:
-            preds = pd.DataFrame(self.meta_model.predict_proba(X), columns=self.model_names)
+            meta_preds = self.meta_model.predict_proba(X)
+            if isinstance(meta_preds, list):
+                meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
+
+            preds = pd.DataFrame(meta_preds, columns=self.model_names)
 
             meta_preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(),
                                           axis=1).values.tolist()

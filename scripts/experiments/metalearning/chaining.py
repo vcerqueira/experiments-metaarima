@@ -2,24 +2,24 @@ from pprint import pprint
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.multioutput import ClassifierChain
+from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
 import xgboost as xgb
 
 from src.arima.meta import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS
 
-data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
-# data_name, group = 'Tourism', 'Quarterly'
+data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
-data_name, group = 'M4', 'Weekly'
+# data_name, group = 'M4', 'Weekly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
 TEST_SIZE_UIDS = 0.1
-N_TRIALS = 30
+N_TRIALS = 20
 QUANTILE_THR = 0.1
 N_ESTIMATORS = 25
 MMR = True
@@ -46,13 +46,21 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UI
 # mod = xgb.XGBRFClassifier(n_estimators=100)
 # mod = ClassifierChain(xgb.XGBClassifier())
 mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=N_ESTIMATORS))
+mod_mo = MultiOutputClassifier(xgb.XGBRFClassifier(n_estimators=N_ESTIMATORS))
 
-meta_arima = MetaARIMA(model=mod,
+# meta_arima = MetaARIMA(model=mod,
+#                        freq=freq_str,
+#                        season_length=freq_int,
+#                        n_trials=N_TRIALS,
+#                        quantile_thr=QUANTILE_THR,
+#                        use_mmr=False)
+
+meta_arima = MetaARIMA(model=mod_mo,
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
                        quantile_thr=QUANTILE_THR,
-                       use_mmr=False)
+                       use_mmr=MMR)
 
 meta_arima_mmr = MetaARIMA(model=mod,
                            freq=freq_str,

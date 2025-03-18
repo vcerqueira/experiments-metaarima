@@ -5,6 +5,7 @@ from gluonts.dataset.repository.datasets import get_dataset, dataset_names
 
 from src.load_data.base import LoadDataset
 
+
 # pprint(dataset_names)
 
 
@@ -96,7 +97,6 @@ class GluontsDataset(LoadDataset):
             df = cls.prune_df_by_size(df, min_n_instances)
 
         return df
-
 
 # df, *_ = GluontsDataset.load_everything('m1_yearly')
 # df['unique_id'].nunique()
