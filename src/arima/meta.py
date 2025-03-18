@@ -160,9 +160,7 @@ class MetaARIMAUtils:
 
 
 class MetaARIMA:
-    # todo compare against other arima implementations
     # todo eval meta-level
-    # add mmr
 
     def __init__(self,
                  model: ClassifierChain,
@@ -172,6 +170,7 @@ class MetaARIMA:
                  quantile_thr: float = 0.05,
                  mmr_lambda: float = 0.75,
                  use_mmr: bool = False):
+
         self.meta_model = model
         self.n_trials = n_trials
         self.quantile_thr = quantile_thr

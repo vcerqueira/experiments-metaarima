@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
 import xgboost as xgb
+from lightgbm import LGBMClassifier
 
 from src.arima.meta import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS
@@ -45,7 +46,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UI
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
 # mod = ClassifierChain(xgb.XGBClassifier())
-mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=N_ESTIMATORS))
+# mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=N_ESTIMATORS))
+mod = ClassifierChain(LGBMClassifier())
 
 # meta_arima = MetaARIMA(model=mod,
 #                        freq=freq_str,
