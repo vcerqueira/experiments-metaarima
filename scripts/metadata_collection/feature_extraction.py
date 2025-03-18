@@ -14,7 +14,9 @@ data_name, group = DATA_GROUPS[GROUP_IDX]
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
-df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
+df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(
+    group, extended=True
+)
 # df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, sample_n_uid=3)
 
 train, _ = data_loader.train_test_split(df, horizon=horizon)

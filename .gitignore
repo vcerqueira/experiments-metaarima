@@ -174,3 +174,4 @@ experiments_extra/
 extra
 modelradar/
 scripts/experiments/_dev/
+.DS_Store

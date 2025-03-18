@@ -98,15 +98,19 @@ def process_series(
 if __name__ == "__main__":  # REQUIRED for multiprocessing
     # data_name, group = 'M3', 'Monthly'
     # data_name, group = 'M3', 'Quarterly'
-    # data_name, group = 'Tourism', 'Monthly'
-    # data_name, group = 'Tourism', 'Quarterly'
-    data_name, group = "M4", "Monthly"
-    # data_name, group = 'M4', 'Quarterly'
+    # data_name, group = "Tourism", "Monthly"
+    # data_name, group = "Tourism", "Quarterly"
+    # data_name, group = "M4", "Monthly"
+    # data_name, group = "M4", "Quarterly"
+    data_name, group = "M4", "Weekly"
+    # data_name, group = "M4", "Daily"
 
     logging.info(f"Starting processing for dataset: {data_name}, group: {group}")
 
     data_loader = DATASETS[data_name]
-    df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
+    df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(
+        group, extended=True
+    )
     logging.info(f"Data loaded with horizon: {horizon}, frequency: {freq_str}")
 
     train, test = data_loader.train_test_split(df, horizon=horizon)
@@ -116,7 +120,7 @@ if __name__ == "__main__":  # REQUIRED for multiprocessing
     models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_MAX)
     logging.info(f"Number of models: {len(models)}")
 
-    PREV_RESULTS_CSV = ["arima,M4,Monthly_.csv"]
+    PREV_RESULTS_CSV = [f"arima,{data_name},{group}_.csv"]
     outfile = Path(__file__).resolve().parents[2] / "assets" / "metadata_cv"
 
     result_files = set()
