@@ -17,16 +17,17 @@ class LoadDataset:
     data_group = [*horizons_map]
 
     @classmethod
-    def load_data(cls, group, min_n_instances: typing.Optional[int] = None):
+    def load_data(cls, group, min_n_instances: typing.Optional[int] = None, extended: bool = False):
         pass
 
     @classmethod
     def load_everything(cls,
                         group,
                         min_n_instances=None,
-                        sample_n_uid=None):
+                        sample_n_uid=None,
+                        extended: bool = False):
 
-        df = cls.load_data(group, min_n_instances)
+        df = cls.load_data(group, min_n_instances, extended)
 
         horizon = cls.horizons_map.get(group)
         n_lags = cls.context_length.get(group)

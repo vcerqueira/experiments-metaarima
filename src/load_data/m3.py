@@ -41,7 +41,7 @@ class M3Dataset(LoadDataset):
     frequency = [*frequency_map.values()]
 
     @classmethod
-    def load_data(cls, group, min_n_instances=None):
+    def load_data(cls, group, min_n_instances=None, extended=False):
         ds, *_ = M3.load(cls.DATASET_PATH, group=group)
 
         if min_n_instances is not None:

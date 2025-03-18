@@ -5,8 +5,8 @@ from gluonts.dataset.repository.datasets import get_dataset, dataset_names
 
 from src.load_data.base import LoadDataset
 
+# pprint(dataset_names)
 
-pprint(dataset_names)
 
 class GluontsDataset(LoadDataset):
     DATASET_NAME = 'GLUONTS'
@@ -43,7 +43,8 @@ class GluontsDataset(LoadDataset):
     @classmethod
     def load_data(cls,
                   group,
-                  min_n_instances=None):
+                  min_n_instances=None,
+                  extended=False):
 
         dataset = get_dataset(group, regenerate=False)
         train_list = dataset.train

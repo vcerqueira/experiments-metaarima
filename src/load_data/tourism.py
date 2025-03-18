@@ -43,7 +43,7 @@ class TourismDataset(LoadDataset):
     frequency = [*frequency_map.values()]
 
     @classmethod
-    def load_data(cls, group, min_n_instances=None):
+    def load_data(cls, group, min_n_instances=None, extended=False):
 
         assert group in cls.data_group
 

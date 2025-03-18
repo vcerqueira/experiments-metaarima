@@ -11,14 +11,12 @@ DATASETS = {
 }
 
 DATA_GROUPS = [
-    # ('Gluonts', 'm1_monthly'),
-    # ('Gluonts', 'm1_quarterly'),
     ('M3', 'Monthly'),
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
     ('M4', 'Monthly'),
     ('M4', 'Quarterly'),
+    ('M4', 'Weekly'),
+    ('M4', 'Daily'),
 ]
-
-GROUP_IDX = 6
