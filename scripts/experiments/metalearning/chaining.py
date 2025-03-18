@@ -26,8 +26,6 @@ MMR = True
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, extended=True)
 
-
-
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
 cv = pd.read_csv(f'assets/metadata_cv/arima,{data_name},{group}.csv')

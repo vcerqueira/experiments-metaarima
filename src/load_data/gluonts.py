@@ -14,26 +14,46 @@ class GluontsDataset(LoadDataset):
     horizons_map = {
         'm1_quarterly': 2,
         'm1_monthly': 8,
+        'm1_yearly': 4,
+        'tourism_monthly': 12,
+        'tourism_quarterly': 8,
+        'tourism_yearly': 4,
     }
 
     frequency_map = {
         'm1_quarterly': 4,
         'm1_monthly': 12,
+        'm1_yearly': 1,
+        'tourism_monthly': 12,
+        'tourism_quarterly': 4,
+        'tourism_yearly': 1,
     }
 
     context_length = {
         'm1_quarterly': 4,
         'm1_monthly': 12,
+        'm1_yearly': 3,
+        'tourism_monthly': 24,
+        'tourism_quarterly': 8,
+        'tourism_yearly': 3,
     }
 
     min_samples = {
         'm1_quarterly': 22,
         'm1_monthly': 52,
+        'm1_yearly': 10,
+        'tourism_monthly': 36,
+        'tourism_quarterly': 16,
+        'tourism_yearly': 10,
     }
 
     frequency_pd = {
         'm1_quarterly': 'Q',
         'm1_monthly': 'M',
+        'm1_yearly': 'Y',
+        'tourism_monthly': 'M',
+        'tourism_quarterly': 'Q',
+        'tourism_yearly': 'Y',
     }
 
     data_group = [*horizons_map]
@@ -76,3 +96,7 @@ class GluontsDataset(LoadDataset):
             df = cls.prune_df_by_size(df, min_n_instances)
 
         return df
+
+
+# df, *_ = GluontsDataset.load_everything('m1_yearly')
+# df['unique_id'].nunique()
