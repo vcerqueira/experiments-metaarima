@@ -100,9 +100,9 @@ if __name__ == "__main__":  # REQUIRED for multiprocessing
     # data_name, group = 'M3', 'Quarterly'
     # data_name, group = "Tourism", "Monthly"
     # data_name, group = "Tourism", "Quarterly"
-    # data_name, group = "M4", "Monthly"
+    data_name, group = "M4", "Monthly"
     # data_name, group = "M4", "Quarterly"
-    data_name, group = "M4", "Weekly"
+    # data_name, group = "M4", "Weekly"
     # data_name, group = "M4", "Daily"
 
     logging.info(f"Starting processing for dataset: {data_name}, group: {group}")
