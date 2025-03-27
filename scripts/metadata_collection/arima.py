@@ -8,7 +8,8 @@ from utilsforecast.losses import smape
 from utilsforecast.evaluation import evaluate
 
 from src.load_data.config import DATASETS
-from src.arima.meta import MetaARIMAUtils
+from src.meta.arima import MetaARIMAUtils
+from src.config import ORDER_MAX
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -24,7 +25,6 @@ df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group)
 
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
-ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
 models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_MAX)
 print(len(models))
 
@@ -36,11 +36,7 @@ if __name__ == '__main__':
     result_files = []
     for file in PREV_RESULTS_CSV:
         r = pd.read_csv(f'{outfile}/{file}')
-
-        # result_files.append(r['unique_id'].values.tolist())
         result_files += r['unique_id'].values.tolist()
-
-    # print(result_files)
 
     results = {}
     df_grouped = train.groupby('unique_id')
@@ -50,7 +46,6 @@ if __name__ == '__main__':
         if uid in result_files:
             continue
 
-        # df = ds.query('unique_id=="Y1"')
         sf_auto = StatsForecast(models=[AutoARIMA(),
                                         SeasonalNaive(season_length=freq_int),
                                         AutoETS(season_length=freq_int),
@@ -83,8 +78,6 @@ if __name__ == '__main__':
         best_model_name = err.sort_values().index[0]
 
         best_model = sf.fitted_.flatten()[err.argmin()]
-
-        # assert best_model.__str__() == best_model_name
 
         mod_summary = MetaARIMAUtils.model_summary(best_model.model_)
 

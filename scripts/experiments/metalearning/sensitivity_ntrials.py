@@ -9,10 +9,10 @@ from lightgbm import LGBMClassifier
 from src.meta.arima import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS
 from src.config import (ORDER_MAX,
-                        LAMBDA_SPACE,
-                        LAMBDA,
+                        N_TRIALS_SPACE,
+                        MAX_N_TRIALS,
                         QUANTILE_THR,
-                        N_TRIALS,
+                        LAMBDA,
                         MMR)
 
 # data_name, group = 'M3', 'Monthly'
@@ -34,7 +34,7 @@ input_variables = feats.set_index('unique_id').columns.tolist()
 
 cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
 # cv = cv.head(200)
-# LAMBDA_SPACE = [.1, .2]
+# N_TRIALS_SPACE = [1,2]
 
 model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int,
                                            return_names=True,
@@ -62,7 +62,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     meta_arima = MetaARIMA(model=mod,
                            freq=freq_str,
                            season_length=freq_int,
-                           n_trials=N_TRIALS,
+                           n_trials=MAX_N_TRIALS,
                            quantile_thr=QUANTILE_THR,
                            use_mmr=MMR,
                            mmr_lambda=LAMBDA)
@@ -70,12 +70,12 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     meta_arima.meta_fit(X_train, y_train)
 
     print('MetaARIMA inference')
-    lambda_preds = {}
-    for lambda_ in LAMBDA_SPACE:
-        print('LAMBDA_SPACE', lambda_)
-        meta_arima.mmr_lambda = lambda_
+    n_trials_preds = {}
+    for n_trials_ in N_TRIALS_SPACE:
+        print('N TRIALS', n_trials_)
+        meta_arima.n_trials = n_trials_
 
-        lambda_preds[lambda_] = meta_arima.meta_predict(X_test)
+        n_trials_preds[n_trials_] = meta_arima.meta_predict(X_test)
 
     print('MetaARIMA evaluating')
     for i, (uid, x) in enumerate(X_test.iterrows()):
@@ -83,13 +83,13 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         df_uid = train.query(f'unique_id=="{uid}"')
 
         scores = {}
-        for lambda__ in lambda_preds:
-            uid_list = lambda_preds[lambda__]
+        for n_trials_ in n_trials_preds:
+            uid_list = n_trials_preds[n_trials_]
 
             try:
                 meta_arima.fit(df_uid, config_space=uid_list[i])
             except ValueError:
-                scores[f'MetaARIMA({lambda__})'] = np.nan
+                scores[f'MetaARIMA({n_trials_})'] = np.nan
                 continue
 
             mod_ = meta_arima.model.sf.fitted_[0][0]
@@ -100,7 +100,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
             auto_arima_config = cv.loc[uid, 'auto_config']
             err_meta_mmr = cv.loc[uid, config_selected_mrr]
 
-            scores[f'MetaARIMA({lambda__})'] = err_meta_mmr
+            scores[f'MetaARIMA({n_trials_})'] = err_meta_mmr
 
         scores['unique_id'] = f'{data_name},{group},{uid}'
         scores['AutoARIMA'] = cv.loc[uid, 'score_AutoARIMA']

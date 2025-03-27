@@ -2,7 +2,7 @@ from pathlib import Path
 
 from tsfeatures import tsfeatures
 
-from src.load_data.config import DATASETS, DATA_GROUPS, GROUP_IDX
+from src.load_data.config import DATASETS
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'

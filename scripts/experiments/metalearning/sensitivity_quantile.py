@@ -9,9 +9,8 @@ from lightgbm import LGBMClassifier
 from src.meta.arima import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS
 from src.config import (ORDER_MAX,
-                        LAMBDA_SPACE,
+                        QUANTILE_SPACE,
                         LAMBDA,
-                        QUANTILE_THR,
                         N_TRIALS,
                         MMR)
 
@@ -43,6 +42,10 @@ model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int,
 X = cv.loc[:, input_variables].fillna(-1)
 y = cv.loc[:, model_names]
 
+
+# maybe just iterate over the quantile space and get the final result
+
+
 kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
 
 results = []
@@ -58,38 +61,32 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 
     mod = ClassifierChain(LGBMClassifier(verbosity=-1))
 
-    print('MetaARIMA fitting')
-    meta_arima = MetaARIMA(model=mod,
-                           freq=freq_str,
-                           season_length=freq_int,
-                           n_trials=N_TRIALS,
-                           quantile_thr=QUANTILE_THR,
-                           use_mmr=MMR,
-                           mmr_lambda=LAMBDA)
+    scores = {}
+    for quantile_ in QUANTILE_SPACE:
 
-    meta_arima.meta_fit(X_train, y_train)
+        print('MetaARIMA fitting')
+        meta_arima = MetaARIMA(model=mod,
+                               freq=freq_str,
+                               season_length=freq_int,
+                               n_trials=N_TRIALS,
+                               quantile_thr=quantile_,
+                               use_mmr=MMR,
+                               mmr_lambda=LAMBDA)
 
-    print('MetaARIMA inference')
-    lambda_preds = {}
-    for lambda_ in LAMBDA_SPACE:
-        print('LAMBDA_SPACE', lambda_)
-        meta_arima.mmr_lambda = lambda_
+        meta_arima.meta_fit(X_train, y_train)
 
-        lambda_preds[lambda_] = meta_arima.meta_predict(X_test)
+        print('MetaARIMA inference')
+        pred_list = meta_arima.meta_predict(X_test)
 
-    print('MetaARIMA evaluating')
-    for i, (uid, x) in enumerate(X_test.iterrows()):
-        print(i, uid)
-        df_uid = train.query(f'unique_id=="{uid}"')
-
-        scores = {}
-        for lambda__ in lambda_preds:
-            uid_list = lambda_preds[lambda__]
+        print('MetaARIMA evaluating')
+        for i, (uid, x) in enumerate(X_test.iterrows()):
+            print(i, uid)
+            df_uid = train.query(f'unique_id=="{uid}"')
 
             try:
-                meta_arima.fit(df_uid, config_space=uid_list[i])
+                meta_arima.fit(df_uid, config_space=pred_list[i])
             except ValueError:
-                scores[f'MetaARIMA({lambda__})'] = np.nan
+                scores[f'MetaARIMA({quantile_})'] = np.nan
                 continue
 
             mod_ = meta_arima.model.sf.fitted_[0][0]
@@ -100,14 +97,13 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
             auto_arima_config = cv.loc[uid, 'auto_config']
             err_meta_mmr = cv.loc[uid, config_selected_mrr]
 
-            scores[f'MetaARIMA({lambda__})'] = err_meta_mmr
+            scores[f'MetaARIMA({quantile_})'] = err_meta_mmr
+            scores['AutoARIMA'] = cv.loc[uid, 'score_AutoARIMA']
+            scores['unique_id'] = f'{data_name},{group},{uid}'
 
-        scores['unique_id'] = f'{data_name},{group},{uid}'
-        scores['AutoARIMA'] = cv.loc[uid, 'score_AutoARIMA']
+            pprint(scores)
 
-        pprint(scores)
-
-        results.append(scores)
+            results.append(scores)
 
 results_df = pd.DataFrame(results)
 

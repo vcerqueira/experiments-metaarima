@@ -8,6 +8,8 @@ from src.load_data.base import LoadDataset
 
 
 class TourismDataset(LoadDataset):
+    # todo replace local files with gluonts db
+
     # DATASET_PATH = Path('assets/datasets/tourism/')
     DATASET_PATH = Path(__file__).parent.parent.parent / 'assets' / 'datasets' / 'tourism'
     DATASET_NAME = 'T'

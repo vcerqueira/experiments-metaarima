@@ -4,10 +4,9 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
-import xgboost as xgb
 from lightgbm import LGBMClassifier
 
-from src.arima.meta import MetaARIMAUtils, MetaARIMA
+from src.meta.arima import MetaARIMAUtils, MetaARIMA
 from src.load_data.config import DATASETS
 
 # data_name, group = 'M3', 'Monthly'
@@ -42,6 +41,9 @@ X = cv.loc[:, input_variables].fillna(-1)
 y = cv.loc[:, model_names]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UIDS)
+
+
+
 
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
