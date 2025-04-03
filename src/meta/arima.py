@@ -45,6 +45,7 @@ class MetaARIMABaseMC:
     def __init__(self,
                  config_space: List[str],
                  n_trials: int,
+                 trial_n_obs: int,
                  season_length: int,
                  freq: str):
 
@@ -55,28 +56,53 @@ class MetaARIMABaseMC:
         self.nmodels = len(self.models)
         self.sf = StatsForecast(models=self.models, freq=self.freq)
         self.n_trials = n_trials
+        self.trial_n_obs = trial_n_obs
 
         self.alias = 'MetaARIMA'
 
     def fit(self, df: pd.DataFrame):
-        # do this for each trial
+        aicc_trials = np.zeros((self.n_trials, self.nmodels))
+
+        if self.trial_n_obs < 1:
+            n_samples = max(int(len(df) * self.trial_n_obs), 20)
+        else:
+            n_samples = self.trial_n_obs
+
+        for trial in range(self.n_trials):
+            # Get a contiguous sample of n observations from df
+            start_idx = np.random.randint(0, len(df) - n_samples + 1)
+            sample_df = df.iloc[start_idx:start_idx + n_samples].copy()
+
+            self.sf.fit(df=sample_df)
+
+            # Store AICc values for this trial
+            for i in range(self.nmodels):
+                aicc_trials[trial, i] = self.sf.fitted_[0][i].model_['aicc']
+
+        # Calculate average AICc across trials for each model
+        avg_aicc = np.mean(aicc_trials, axis=0)
+
+        # Select the model with lowest average AICc
+        best_idx = avg_aicc.argmin()
+
+        best_mod = self.sf.fitted_[0][best_idx]
+        best_config = MetaARIMAUtils.get_model_order(best_mod.model_,
+                                                     as_alias=True,
+                                                     alias_freq=self.season_length)
+
+        # Refit the best model with all data
+        self.initialize_sf(config_space=[best_config])
         self.sf.fit(df=df)
 
-        aicc_ = [self.sf.fitted_[0][i].model_['aicc'] for i in range(self.nmodels)]
-
-        assert len(aicc_) == self.nmodels
-
-        # select the one with lowest average aicc
-        best_idx = np.array(aicc_).argmin()
-
-        # THEN, refit (pass to MetaARIMABase??) best one with all data
-
-        self.sf.fitted_ = np.array([[self.sf.fitted_[0][best_idx]]])
+        # self.sf.fitted_ = np.array([[self.sf.fitted_[0][best_idx]]])
         self.sf.fitted_[0][0].alias = self.alias
+
+    def initialize_sf(self, config_space):
+        self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=config_space)
+        self.sf = StatsForecast(models=self.models, freq=self.freq)
 
     def predict(self, h: int):
         return self.sf.predict(h=h)
-
 
 
 class MetaARIMAUtils:
