@@ -79,7 +79,7 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
     df_uid = train.query(f'unique_id=="{uid}"')
 
     # meta_arima.fit(df_uid, config_list=pred_list.values[i])
-    meta_arima.fit(df_uid, config_list=pred_list[i])
+    meta_arima.fit(df_uid, config_space=pred_list[i])
     mod_ = meta_arima.model.sf.fitted_[0][0]
     config_selected = MetaARIMAUtils.get_model_order(mod_.model_,
                                                      as_alias=True,

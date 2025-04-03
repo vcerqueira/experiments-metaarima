@@ -40,6 +40,45 @@ class MetaARIMABase:
         return self.sf.predict(h=h)
 
 
+class MetaARIMABaseMC:
+
+    def __init__(self,
+                 config_space: List[str],
+                 n_trials: int,
+                 season_length: int,
+                 freq: str):
+
+        self.config_space = config_space
+        self.freq = freq
+        self.season_length = season_length
+        self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=self.config_space)
+        self.nmodels = len(self.models)
+        self.sf = StatsForecast(models=self.models, freq=self.freq)
+        self.n_trials = n_trials
+
+        self.alias = 'MetaARIMA'
+
+    def fit(self, df: pd.DataFrame):
+        # do this for each trial
+        self.sf.fit(df=df)
+
+        aicc_ = [self.sf.fitted_[0][i].model_['aicc'] for i in range(self.nmodels)]
+
+        assert len(aicc_) == self.nmodels
+
+        # select the one with lowest average aicc
+        best_idx = np.array(aicc_).argmin()
+
+        # THEN, refit (pass to MetaARIMABase??) best one with all data
+
+        self.sf.fitted_ = np.array([[self.sf.fitted_[0][best_idx]]])
+        self.sf.fitted_[0][0].alias = self.alias
+
+    def predict(self, h: int):
+        return self.sf.predict(h=h)
+
+
+
 class MetaARIMAUtils:
     ORDER_MAX = {'AR': 2, 'I': 1, 'MA': 2, 'S_AR': 1, 'S_I': 1, 'S_MA': 1, }
 
