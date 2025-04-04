@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -45,18 +45,23 @@ class MetaARIMABaseMC:
     def __init__(self,
                  config_space: List[str],
                  n_trials: int,
-                 trial_n_obs: int,
+                 trial_n_obs: Union[int, float],
                  season_length: int,
                  freq: str):
 
         self.config_space = config_space
         self.freq = freq
         self.season_length = season_length
-        self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=self.config_space)
-        self.nmodels = len(self.models)
-        self.sf = StatsForecast(models=self.models, freq=self.freq)
         self.n_trials = n_trials
         self.trial_n_obs = trial_n_obs
+        self.models = None
+        self.sf = None
+
+        self.initialize_sf(self.config_space)
+        self.nmodels = len(self.models)
+
+        # self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=self.config_space)
+        # self.sf = StatsForecast(models=self.models, freq=self.freq)
 
         self.alias = 'MetaARIMA'
 
@@ -228,6 +233,7 @@ class MetaARIMA:
                  freq: str,
                  season_length: int,
                  n_trials: int,
+                 use_mc: bool = False,
                  quantile_thr: float = 0.05,
                  mmr_lambda: float = 0.75,
                  use_mmr: bool = False):
@@ -242,6 +248,7 @@ class MetaARIMA:
         self.corr_mat = None
         self.use_mmr = use_mmr
         self.mmr_lambda = mmr_lambda
+        self.use_mc = use_mc
 
         self.is_fit: bool = False
 
@@ -293,9 +300,16 @@ class MetaARIMA:
     def fit(self, df: pd.DataFrame, config_space: List[str]):
         assert self.is_fit
 
-        self.model = MetaARIMABase(config_space=config_space,
-                                   freq=self.freq,
-                                   season_length=self.season_length)
+        if self.use_mc:
+
+            self.model = MetaARIMABaseMC(config_space=config_space,
+                                         freq=self.freq,
+                                         season_length=self.season_length, n_trials=10,
+                                         trial_n_obs=0.4)
+        else:
+            self.model = MetaARIMABase(config_space=config_space,
+                                       freq=self.freq,
+                                       season_length=self.season_length)
 
         self.model.fit(df)
 
