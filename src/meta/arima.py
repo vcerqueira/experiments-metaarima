@@ -1,5 +1,6 @@
 import warnings
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Tuple
+from math import log
 
 import numpy as np
 import pandas as pd
@@ -38,6 +39,106 @@ class MetaARIMABase:
 
     def predict(self, h: int):
         return self.sf.predict(h=h)
+
+
+class HalvingMetaARIMABase(MetaARIMABase):
+    def __init__(self,
+                 config_space: List[str],
+                 season_length: int,
+                 freq: str,
+                 eta: float = 2,
+                 resource_factor: float = 2.5,
+                 init_resource_factor: int = 10,
+                 min_configs: int = 1):
+        """
+        Initialize MetaARIMA with successive halving.
+
+        Parameters:
+        -----------
+        config_space : List[str]
+            List of ARIMA model configurations
+        season_length : int
+            Length of the seasonal cycle
+        freq : str
+            Time series frequency
+        eta : float, default=2
+            Controls the proportion of configurations to keep after each round
+        resource_factor : float, default=2
+            Controls how much the sample size increases in each round
+        min_configs : int, default=1
+            Minimum number of configurations to evaluate fully
+        """
+        super().__init__(config_space, season_length, freq)
+        self.eta = eta
+        self.resource_factor = resource_factor
+        self.min_configs = min_configs
+        self.init_resource_factor = init_resource_factor
+
+    def _evaluate_models(self, df: pd.DataFrame, model_indices: List[int], sample_size: int) -> List[Tuple[int, float]]:
+        """
+        Evaluate a subset of models on a subset of data.
+
+        Parameters:
+        -----------
+        df : pd.DataFrame
+            The full training dataset
+        model_indices : List[int]
+            Indices of models to evaluate
+        sample_size : int
+            Number of time points to use in evaluation
+
+        Returns:
+        --------
+        List[Tuple[int, float]]
+            List of tuples (model_index, aicc_score)
+        """
+        df_subset = df.tail(sample_size).copy()
+        print(df_subset.shape[0])
+
+        models_subset = [self.models[i] for i in model_indices]
+        sf_subset = StatsForecast(models=models_subset, freq=self.freq)
+
+        sf_subset.fit(df=df_subset)
+
+        # Get AICc scores
+        results = []
+        for i, model_idx in enumerate(model_indices):
+            aicc = sf_subset.fitted_[0][i].model_['aicc']
+            results.append((model_idx, aicc))
+
+        return results
+
+    def fit(self, df: pd.DataFrame):
+        """
+        Fit using successive halving to efficiently select the best model.
+        """
+        n_rows = len(df)
+        n_models = self.nmodels
+
+        s_max = int(log(n_models, self.eta))
+
+        remaining_indices = list(range(n_models))
+
+        min_sample_size = self.season_length * self.init_resource_factor
+
+        for s in range(s_max + 1):
+            sample_size = min(n_rows, int(min_sample_size * (self.resource_factor ** s)))
+
+            eval_results = self._evaluate_models(df, remaining_indices, int(sample_size))
+
+            eval_results.sort(key=lambda x: x[1])
+
+            n_keep = max(int(n_models / (self.eta ** (s + 1))), self.min_configs)
+
+            remaining_indices = [idx for idx, _ in eval_results[:n_keep]]
+
+            if len(remaining_indices) <= 1:
+                break
+
+        best_idx = remaining_indices[0]
+        self.sf = StatsForecast(models=[self.models[best_idx]], freq=self.freq)
+        self.sf.fit(df=df)
+        self.sf.fitted_[0][0].alias = self.alias
 
 
 class MetaARIMABaseMC:

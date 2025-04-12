@@ -6,7 +6,7 @@ from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
 from lightgbm import LGBMClassifier
 
-from src.meta.arima import MetaARIMAUtils, MetaARIMA
+from src.meta.arima import MetaARIMAUtils, MetaARIMA, HalvingMetaARIMABase
 from src.load_data.config import DATASETS
 
 # data_name, group = 'M3', 'Monthly'
@@ -41,9 +41,6 @@ X = cv.loc[:, input_variables].fillna(-1)
 y = cv.loc[:, model_names]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UIDS)
-
-
-
 
 # mod = ClassifierChain(xgb.XGBClassifier(n_estimators=100))
 # mod = xgb.XGBRFClassifier(n_estimators=100)
@@ -85,9 +82,22 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
                                                      as_alias=True,
                                                      alias_freq=freq_int)
 
+    halving_arima = HalvingMetaARIMABase(config_space=pred_list[i],
+                                         season_length=meta_arima.season_length,
+                                         freq=meta_arima.freq,
+                                         eta=2,
+                                         init_resource_factor=3,
+                                         resource_factor=2)
+    halving_arima.fit(df_uid)
+    mod_h = halving_arima.sf.fitted_[0][0]
+    config_selected_h = MetaARIMAUtils.get_model_order(mod_h.model_,
+                                                       as_alias=True,
+                                                       alias_freq=freq_int)
+
     auto_arima_config = cv.loc[uid, 'auto_config']
 
     err_meta = cv.loc[uid, config_selected]
+    err_metah = cv.loc[uid, config_selected_h]
     err_auto = cv.loc[uid, 'score_AutoARIMA']
     err_snaive = cv.loc[uid, 'score_SeasNaive']
     err_theta = cv.loc[uid, 'score_AutoTheta']
@@ -100,6 +110,7 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
 
     comp = {
         'MetaARIMA': err_meta,
+        'MetaARIMA(SH)': err_metah,
         'AutoARIMA': err_auto,
         'SeasonalNaive': err_snaive,
         'AutoTheta': err_theta,
