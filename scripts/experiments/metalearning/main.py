@@ -6,12 +6,14 @@ from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
 from lightgbm import LGBMClassifier
 
-from src.meta.arima import MetaARIMAUtils, MetaARIMA, HalvingMetaARIMABase
+# from src.meta.arima import MetaARIMAUtils, MetaARIMA, HalvingMetaARIMABase
+from src.meta.arima.meta_arima import MetaARIMA
+from src.meta.arima._base import MetaARIMAUtils
 from src.load_data.config import DATASETS
 
 # data_name, group = 'M3', 'Monthly'
-# data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Tourism', 'Monthly'
+data_name, group = 'M3', 'Quarterly'
+# data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
@@ -48,19 +50,13 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE_UI
 # mod = ClassifierChain(xgb.XGBRFClassifier(n_estimators=N_ESTIMATORS))
 mod = ClassifierChain(LGBMClassifier())
 
-# meta_arima = MetaARIMA(model=mod,
-#                        freq=freq_str,
-#                        season_length=freq_int,
-#                        n_trials=N_TRIALS,
-#                        quantile_thr=QUANTILE_THR,
-#                        use_mmr=False)
-
 meta_arima = MetaARIMA(model=mod,
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
                        quantile_thr=QUANTILE_THR,
                        use_mmr=MMR,
+                       base_optim='halving',
                        mmr_lambda=0.75)
 
 meta_arima.meta_fit(X_train, y_train)
@@ -82,22 +78,9 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
                                                      as_alias=True,
                                                      alias_freq=freq_int)
 
-    halving_arima = HalvingMetaARIMABase(config_space=pred_list[i],
-                                         season_length=meta_arima.season_length,
-                                         freq=meta_arima.freq,
-                                         eta=2,
-                                         init_resource_factor=3,
-                                         resource_factor=2)
-    halving_arima.fit(df_uid)
-    mod_h = halving_arima.sf.fitted_[0][0]
-    config_selected_h = MetaARIMAUtils.get_model_order(mod_h.model_,
-                                                       as_alias=True,
-                                                       alias_freq=freq_int)
-
     auto_arima_config = cv.loc[uid, 'auto_config']
 
     err_meta = cv.loc[uid, config_selected]
-    err_metah = cv.loc[uid, config_selected_h]
     err_auto = cv.loc[uid, 'score_AutoARIMA']
     err_snaive = cv.loc[uid, 'score_SeasNaive']
     err_theta = cv.loc[uid, 'score_AutoTheta']
@@ -110,8 +93,8 @@ for i, (uid, x) in enumerate(X_test.iterrows()):
 
     comp = {
         'MetaARIMA': err_meta,
-        'MetaARIMA(SH)': err_metah,
         'AutoARIMA': err_auto,
+        'AutoARIMA2': err_auto2,
         'SeasonalNaive': err_snaive,
         'AutoTheta': err_theta,
         'AutoETS': err_ets,
