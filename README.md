@@ -12,21 +12,25 @@ second, run scripts/experiments/metalearning to build and test the metaearning m
 ## baselines and benchmarks
 
 - AutoARIMA (statsforecast)
-- AutoARIMA2 (pmdarima?)
+- AutoARIMA2 (confined search)
 - ARIMA(2,1,2) 
 - ARIMA(1,0,0)
 - Seasonal Naive
 - Theta
 - ETS
 - MetaARIMA
-- MetaARIMA(No MMR)
-- MetaARIMA(MultiOutput)
-- MetaARIMA(Native MultiOutput)
 
 side analysis
 - MetaARIMA @ varying quantile values
 - MetaARIMA @ varying lambda values
-- MetaARIMA with diff learning classifiers
+- MetaARIMA @ n trials
+
+ablation
+- MetaARIMA no mmr
+- MetaARIMA mc
+- MetaARIMA no successive halving
+- MetaARIMA no classifier chain (multioutput)
+- MetaARIMA no classifier chain (native multioutput)
 
 
 # contributions

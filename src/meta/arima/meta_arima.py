@@ -4,7 +4,10 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from src.meta.arima._base import _MetaARIMABase, _HalvingMetaARIMABase, _MetaARIMABaseMC
+from src.meta.arima._base import (MetaARIMAUtils,
+                                  _MetaARIMABase,
+                                  _HalvingMetaARIMABase,
+                                  _MetaARIMABaseMC)
 
 warnings.filterwarnings(action='ignore')
 
@@ -33,6 +36,7 @@ class MetaARIMA:
         self.use_mmr = use_mmr
         self.mmr_lambda = mmr_lambda
         self.base_optim = base_optim
+        self.selected_config = ''
 
         self.is_fit: bool = False
 
@@ -102,19 +106,9 @@ class MetaARIMA:
             raise ValueError(f'Unknown base optimizer: {self.base_optim}')
 
         self.model.fit(df)
-
-    @classmethod
-    def from_model(cls, n_trials: int):
-        # todo implement serialiation
-
-        pass
-
-    @staticmethod
-    def _check_params(quantile_thr, mmr_lambda):
-        assert quantile_thr > 0
-        assert quantile_thr < 1
-        assert mmr_lambda >= 0
-        assert mmr_lambda <= 1
+        self.selected_config = MetaARIMAUtils.get_model_order(self.model.sf.fitted_[0][0].model_,
+                                                              as_alias=True,
+                                                              alias_freq=self.season_length)
 
     def _mmr_selection(self, probs: pd.Series):
         """ Re-rank configurations based on maximal marginal relevance
@@ -165,3 +159,16 @@ class MetaARIMA:
                 break
 
         return selected_indices
+
+    @classmethod
+    def from_model(cls, n_trials: int):
+        # todo implement serialiation
+
+        pass
+
+    @staticmethod
+    def _check_params(quantile_thr, mmr_lambda):
+        assert quantile_thr > 0
+        assert quantile_thr < 1
+        assert mmr_lambda >= 0
+        assert mmr_lambda <= 1

@@ -6,13 +6,15 @@ from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from lightgbm import LGBMClassifier
 
-from src.meta.arima import MetaARIMAUtils, MetaARIMA
+from src.meta.arima.meta_arima import MetaARIMA
+from src.meta.arima._base import MetaARIMAUtils
 from src.load_data.config import DATASETS
 from src.config import (ORDER_MAX,
                         QUANTILE_SPACE,
                         LAMBDA,
                         N_TRIALS,
-                        MMR)
+                        MMR,
+                        BASE_OPTIM)
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -44,7 +46,7 @@ y = cv.loc[:, model_names]
 
 
 # maybe just iterate over the quantile space and get the final result
-
+## todo just create lots of metaarima's
 
 kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
 
@@ -69,6 +71,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                                freq=freq_str,
                                season_length=freq_int,
                                n_trials=N_TRIALS,
+                               base_optim=BASE_OPTIM,
                                quantile_thr=quantile_,
                                use_mmr=MMR,
                                mmr_lambda=LAMBDA)

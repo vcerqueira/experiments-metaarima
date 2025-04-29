@@ -1,4 +1,3 @@
-# ideally this should compare metaarima@N with autoarima@N, not default autoarima
 from pprint import pprint
 import pandas as pd
 import numpy as np
@@ -6,14 +5,16 @@ from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from lightgbm import LGBMClassifier
 
-from src.meta.arima import MetaARIMAUtils, MetaARIMA
+from src.meta.arima._base import MetaARIMAUtils
+from src.meta.arima.meta_arima import MetaARIMA
 from src.load_data.config import DATASETS
 from src.config import (ORDER_MAX,
                         N_TRIALS_SPACE,
                         MAX_N_TRIALS,
                         QUANTILE_THR,
                         LAMBDA,
-                        MMR)
+                        MMR,
+                        BASE_OPTIM)
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -28,13 +29,11 @@ df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, ext
 
 train, test = data_loader.train_test_split(df, horizon=horizon)
 
-cv = pd.read_csv(f'assets/metadata_cv/arima,{data_name},{group}.csv')
 feats = pd.read_csv(f'assets/features/features,{data_name},{group}.csv')
 input_variables = feats.set_index('unique_id').columns.tolist()
 
+cv = pd.read_csv(f'assets/metadata_cv/arima,{data_name},{group}.csv')
 cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
-# cv = cv.head(200)
-# N_TRIALS_SPACE = [1,2]
 
 model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int,
                                            return_names=True,
@@ -64,6 +63,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                            season_length=freq_int,
                            n_trials=MAX_N_TRIALS,
                            quantile_thr=QUANTILE_THR,
+                           base_optim=BASE_OPTIM,
                            use_mmr=MMR,
                            mmr_lambda=LAMBDA)
 
@@ -92,13 +92,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                 scores[f'MetaARIMA({n_trials_})'] = np.nan
                 continue
 
-            mod_ = meta_arima.model.sf.fitted_[0][0]
-            config_selected_mrr = MetaARIMAUtils.get_model_order(mod_.model_,
-                                                                 as_alias=True,
-                                                                 alias_freq=freq_int)
-
-            auto_arima_config = cv.loc[uid, 'auto_config']
-            err_meta_mmr = cv.loc[uid, config_selected_mrr]
+            err_meta_mmr = cv.loc[uid, meta_arima.selected_config]
 
             scores[f'MetaARIMA({n_trials_})'] = err_meta_mmr
 
