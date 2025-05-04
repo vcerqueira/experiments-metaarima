@@ -34,6 +34,8 @@ model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int, return_names=
 X = cv.loc[:, input_variables].fillna(-1)
 y = cv.loc[:, model_names]
 
+# note that this is cv on the time series set (80% of time series for train, 20% for testing)
+# partition is done at time series level, not in time dimension
 kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
 
 results = []
