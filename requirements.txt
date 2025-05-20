@@ -9,3 +9,4 @@ statsforecast==1.7.8
 statsmodels==0.14.4
 utilsforecast==0.2.11
 tsfeatures==0.4.5
+python-dotenv==1.1.0
