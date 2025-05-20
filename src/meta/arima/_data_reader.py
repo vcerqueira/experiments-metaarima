@@ -1,3 +1,4 @@
+from typing import Optional
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -8,27 +9,53 @@ from src.meta.arima._base import MetaARIMAUtils
 
 
 class MetadataReader:
-    @staticmethod
-    def get_features_dir():
+    def __init__(self, dataset_name: str, 
+                 group: str, 
+                 freq_int: int, 
+                 id_col: str = 'unique_id'):
+        """
+        Args:
+            dataset_name: str, name of the dataset
+            group: str, group of the dataset
+            freq_int: int, frequency of the dataset
+            id_col: str, name of the id column
+        """
         load_dotenv()
-        return Path(os.getenv("FEATURES_DIR", "assets/features/"))
+        self.features_dir = Path(os.environ["FEATURES_DIR"])
+        self.metadata_cv_dir = Path(os.environ["METADATA_CV_DIR"])
+        self.id_col = id_col
+        self.input_variables = None
+        self.model_names = None
+        self.dataset_name = dataset_name
+        self.group = group
+        self.freq_int = freq_int
 
-    @staticmethod
-    def get_metadata_cv_dir():
-        load_dotenv()
-        return Path(os.getenv("METADATA_CV_DIR", "assets/metadata_cv/"))
+    def read(self, fill_na_value: Optional[float] = -1):
+        """ Read the data from the features and metadata cv files.
+        Args:
+            fill_na_value: float, value to fill na with
+            fill_na_value is not None, then fill na with the value
 
-    @staticmethod
-    def read(data_name, group, freq_int, features_dir=None, metadata_cv_dir=None):
-        features_dir = Path(features_dir) if features_dir is not None else MetadataReader.get_features_dir()
-        metadata_cv_dir = Path(metadata_cv_dir) if metadata_cv_dir is not None else MetadataReader.get_metadata_cv_dir()
-        feats_path = features_dir / f"features,{data_name},{group}.csv"
-        cv_path = metadata_cv_dir / f"arima,{data_name},{group}.csv"
+        Returns:
+            X: pd.DataFrame, features
+            y: pd.DataFrame, target
+            input_variables: list, input variables
+            model_names: list, model names
+            cv: pd.DataFrame, metadata cv
+        """
+        feats_path = self.features_dir / f"features,{self.dataset_name},{self.group}.csv"
+        cv_path = self.metadata_cv_dir / f"arima,{self.dataset_name},{self.group}.csv"
+        
         feats = pd.read_csv(feats_path)
         cv = pd.read_csv(cv_path)
-        cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
-        input_variables = feats.set_index('unique_id').columns.tolist()
-        model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int, return_names=True)
-        X = cv.loc[:, input_variables].fillna(-1)
-        y = cv.loc[:, model_names]
-        return X, y, input_variables, model_names, cv
+
+        cv = cv.merge(feats, on=[self.id_col]).set_index(self.id_col)
+        self.input_variables = feats.set_index(self.id_col).columns.tolist()
+        self.model_names = MetaARIMAUtils.get_models_sf(season_length=self.freq_int, return_names=True)
+
+        X = cv.loc[:, self.input_variables]
+        if fill_na_value is not None:
+            X = X.fillna(fill_na_value)
+        y = cv.loc[:, self.model_names]
+
+        return X, y, self.input_variables, self.model_names, cv
