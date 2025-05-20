@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 import pandas as pd
 import numpy as np
@@ -9,9 +10,9 @@ from src.load_data.base import LoadDataset
 
 class TourismDataset(LoadDataset):
     # todo replace local files with gluonts db
+    load_dotenv()
 
-    # DATASET_PATH = Path('assets/datasets/tourism/')
-    DATASET_PATH = Path(__file__).parent.parent.parent / 'assets' / 'datasets' / 'tourism'
+    DATASET_PATH = Path(os.environ["DATA_DIR"]) / 'tourism'
     DATASET_NAME = 'T'
 
     horizons_map = {

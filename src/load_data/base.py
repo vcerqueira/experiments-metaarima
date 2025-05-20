@@ -1,11 +1,14 @@
+import os
 import typing
 from pathlib import Path
+from dotenv import load_dotenv
 
 import pandas as pd
 
 
 class LoadDataset:
-    DATASET_PATH = Path(__file__).parent.parent.parent / 'assets' / 'datasets'
+    load_dotenv()
+    DATASET_PATH = Path(os.environ["DATA_DIR"])
     DATASET_NAME = ''
 
     horizons = []
