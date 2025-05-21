@@ -73,6 +73,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
         self.resource_factor = resource_factor
         self.min_configs = min_configs
         self.init_resource_factor = init_resource_factor
+        self.tot_nobs = 0
 
     def _evaluate_models(self, df: pd.DataFrame, model_indices: List[int], sample_size: int) -> List[Tuple[int, float]]:
         """
@@ -112,7 +113,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
         """
         Fit using successive halving to efficiently select the best model.
         """
-        n_rows = len(df)
+        n_rows = df.shape[0]
         n_models = self.nmodels
 
         s_max = int(log(n_models, self.eta))
@@ -121,10 +122,12 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
 
         min_sample_size = self.season_length * self.init_resource_factor
 
+        self.tot_nobs = 0
         for s in range(s_max + 1):
             sample_size = min(n_rows, int(min_sample_size * (self.resource_factor ** s)))
 
             eval_results = self._evaluate_models(df, remaining_indices, int(sample_size))
+            self.tot_nobs += len(remaining_indices) * int(sample_size)
 
             eval_results.sort(key=lambda x: x[1])
 

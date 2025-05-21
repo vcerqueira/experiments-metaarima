@@ -7,14 +7,13 @@ from sklearn.multioutput import ClassifierChain
 from lightgbm import LGBMClassifier
 
 from src.meta.arima.meta_arima import MetaARIMA
-from src.meta.arima._base import MetaARIMAUtils
 from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
 from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
