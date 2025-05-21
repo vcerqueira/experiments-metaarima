@@ -62,7 +62,7 @@ uid = X_test.index[0]
 x = X_test.iloc[0]
 print(i, uid)
 
-n_periods = 1000  # or any desired length
+n_periods = 1000
 start_date = pd.Timestamp('2000-01-01') + pd.DateOffset(months=np.random.randint(0, 120))
 date_range = pd.date_range(end=start_date, periods=n_periods, freq='ME')
 df_uid = pd.DataFrame({
@@ -74,8 +74,8 @@ df_uid = pd.DataFrame({
 meta_arima.fit(df_uid, config_space=pred_list[i])
 meta_arima.model.tot_nobs
 
-1000*len(pred_list[i])
-1000*94
+1000 * len(pred_list[i])
+1000 * 94
 
 # 2736
 # 36*len(pred_list[i]) + 72*(len(pred_list[i])/2) + 144*(len(pred_list[i])/4) + 288*(len(pred_list[i])/8)
