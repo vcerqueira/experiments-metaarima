@@ -120,6 +120,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
 
         remaining_indices = list(range(n_models))
 
+        # todo this maybe non-sense in many cases
         min_sample_size = self.season_length * self.init_resource_factor
 
         self.tot_nobs = 0
