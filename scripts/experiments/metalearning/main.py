@@ -11,8 +11,8 @@ from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
 from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 
-# data_name, group = 'M3', 'Monthly'
-data_name, group = 'M3', 'Quarterly'
+data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
@@ -103,6 +103,50 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 results_df = pd.DataFrame(results)
 
 results_df.to_csv(f'assets/results/{data_name},{group}.csv',index=False)
+
+# results_df = pd.read_csv(f'assets/results/{data_name},{group}.csv')
+
+a=results_df.copy()
+b=results_df.copy()
+
+res = pd.concat([a,b]).reset_index(drop=True).drop(columns=['AutoARIMA2','ARIMA(2,1,2)(1,0,0)','AutoTheta','AutoETS'])
+print(res.mean())
+print(res.median())
+print(res.rank(axis=1).mean())
+
+import pandas as pd
+from plotnine import ggplot, element_text,aes, geom_bar, theme,theme_minimal, labs, coord_flip
+
+# Your data as a pandas Series
+s = pd.Series({
+    "MetaARIMA": 2.439560,
+    "AutoARIMA": 2.744048,
+    "ARIMA(2,1,2)": 2.786172,
+    "ARIMA(1,0,0)": 3.609432,
+    "SeasonalNaive": 3.420788
+})
+
+# Convert to DataFrame for plotnine
+df = s.reset_index()
+df.columns = ['Method', 'AverageRank']
+
+# Create the barplot
+p = (
+    ggplot(df, aes(x='reorder(Method, AverageRank)', y='AverageRank'))
+    + geom_bar(stat='identity', fill='#4C72B0')
+    # + coord_flip()  # Optional: horizontal bars
+    + theme_minimal()
+    + theme(axis_text=element_text(size=12))
+    + labs(
+        x='',
+        y='Average Rank',
+        title=''
+    )
+)
+
+print(p)
+p.save('avg_rank.pdf', width=12,height=4.5)
+
 
 print(results_df.mean())
 print(results_df.median())
