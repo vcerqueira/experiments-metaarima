@@ -14,8 +14,8 @@ from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
-data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
+# data_name, group = 'Tourism', 'Quarterly'
+data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
