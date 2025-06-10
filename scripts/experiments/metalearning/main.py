@@ -15,8 +15,8 @@ from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
-data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Weekly'
+# data_name, group = 'M4', 'Monthly'
+data_name, group = 'M4', 'Quarterly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
@@ -62,7 +62,11 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 
         df_uid = train.query(f'unique_id=="{uid}"').copy()
 
-        meta_arima.fit(df_uid, config_space=pred_list[i])
+        try:
+            meta_arima.fit(df_uid, config_space=pred_list[i])
+        except ValueError:
+            continue
+
         auto_arima_config = cv.loc[uid, 'auto_config']
 
         err_meta = cv.loc[uid, meta_arima.selected_config]

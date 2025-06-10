@@ -107,7 +107,7 @@ results_df = pd.DataFrame(results)
 
 results_df.to_csv(f'assets/results/n_trials/{data_name},{group}.csv', index=False)
 
-print(results_df.mean())
+print(results_df.mean(numeric_only=True))
 print(results_df.median())
 print(results_df.rank(axis=1, na_option='bottom').mean())
 print(results_df.dropna().mean())

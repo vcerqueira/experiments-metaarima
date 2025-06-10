@@ -17,10 +17,10 @@ from src.config import (ORDER_MAX,
                         MMR,
                         BASE_OPTIM)
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
-data_name, group = 'Tourism', 'Quarterly'
+# data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
 print(data_name, group)
@@ -105,6 +105,9 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         results.append(scores)
 
 results_df = pd.DataFrame(results)
+
+results_df.to_csv(f'assets/results/sensitivity/lambda,{data_name},{group}.csv', index=False)
+
 
 print(results_df.mean())
 print(results_df.median())
