@@ -11,12 +11,12 @@ from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
 from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
-data_name, group = 'M4', 'Quarterly'
+# data_name, group = 'M4', 'Quarterly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
@@ -98,6 +98,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
             'SeasonalNaive': err_snaive,
             'AutoTheta': err_theta,
             'AutoETS': err_ets,
+            'unique_id': uid,
         }
 
         pprint(comp)
@@ -105,4 +106,4 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         results.append(comp)
 
 results_df = pd.DataFrame(results)
-results_df.to_csv(f'assets/results/{data_name},{group}.csv', index=False)
+results_df.to_csv(f'assets/results/main/{data_name},{group}.csv', index=False)
