@@ -14,10 +14,10 @@ from src.config import (ORDER_MAX,
                         MMR,
                         BASE_OPTIM)
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
-data_name, group = 'Tourism', 'Quarterly'
+# data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
 print(data_name, group)
