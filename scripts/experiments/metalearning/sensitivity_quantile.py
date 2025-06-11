@@ -92,5 +92,6 @@ for quantile_ in QUANTILE_SPACE:
     quantile_results[f'MetaARIMA({quantile_})'] = np.mean(results)
 
 results_df = pd.Series(quantile_results)
+results_df.to_csv(f'assets/results/sensitivity/quantile,{data_name},{group}.csv')
 
 print(results_df)
