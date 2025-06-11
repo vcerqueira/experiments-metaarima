@@ -138,6 +138,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         results.append(comp)
 
 results_df = pd.DataFrame(results)
+results_df.to_csv(f'assets/results/sensitivity/ablation,{data_name},{group}.csv', index=False)
 
 print(results_df.mean())
 print(results_df.median())
