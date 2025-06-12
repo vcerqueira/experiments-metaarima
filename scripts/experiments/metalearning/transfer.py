@@ -30,7 +30,7 @@ target_sets = [
 
 # -- train metamodel
 
-source_data_name, source_group = 'M3', 'Monthly'
+source_data_name, source_group = 'M4', 'Monthly'
 data_loader = DATASETS[source_data_name]
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(source_group, extended=True)
 train, _ = data_loader.train_test_split(df, horizon=horizon)
@@ -52,7 +52,7 @@ meta_arima.meta_fit(X, y)
 # meta_arima.meta_fit(X.head(700), y.head(700))
 
 results = []
-#for j, (train_index, test_index) in enumerate(kfcv.split(X)):
+# for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 for j, (data_name, group) in enumerate(target_sets):
     # data_name, group = 'Tourism', 'Quarterly'
     print(data_name, group)
@@ -62,7 +62,9 @@ for j, (data_name, group) in enumerate(target_sets):
     tgt_df, tgt_horizon, tgt_n_lags, tgt_freq_str, tgt_freq_int = tgt_data_loader.load_everything(group, extended=True)
     tgt_train, _ = tgt_data_loader.train_test_split(tgt_df, horizon=tgt_horizon)
     tgt_mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=tgt_freq_int)
-    tgt_X, tgt_y, _, _, tgt_cv = tgt_mdr.read(fill_na_value=-1)
+    tgt_X, _, _, _, tgt_cv = tgt_mdr.read(fill_na_value=-1)
+
+    tgt_X = tgt_X.head(200)
 
     pred_list = meta_arima.meta_predict(tgt_X)
 
@@ -71,7 +73,6 @@ for j, (data_name, group) in enumerate(target_sets):
         print(i, uid)
 
         df_uid = tgt_train.query(f'unique_id=="{uid}"').copy()
-        meta_arima.selected_config = re.sub(r'\[[^\]]*\]', f'[{tgt_freq_int}]', meta_arima.selected_config)
 
         try:
             meta_arima.fit(df_uid, config_space=pred_list[i])
@@ -79,6 +80,7 @@ for j, (data_name, group) in enumerate(target_sets):
             continue
 
         auto_arima_config = tgt_cv.loc[uid, 'auto_config']
+        meta_arima.selected_config = re.sub(r'\[[^\]]*\]', f'[{tgt_freq_int}]', meta_arima.selected_config)
 
         err_meta = tgt_cv.loc[uid, meta_arima.selected_config]
         err_auto = tgt_cv.loc[uid, 'score_AutoARIMA']
@@ -118,4 +120,7 @@ for j, (data_name, group) in enumerate(target_sets):
         results.append(comp)
 
 results_df = pd.DataFrame(results)
+print(results_df.mean(numeric_only=True))
+print(results_df.median(numeric_only=True))
+
 results_df.to_csv(f'assets/results/sensitivity/transfer,{source_data_name},{source_group}.csv', index=False)

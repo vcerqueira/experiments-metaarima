@@ -8,7 +8,7 @@ from utilsforecast.losses import smape
 from utilsforecast.evaluation import evaluate
 
 from src.load_data.config import DATASETS
-from src.meta.arima import MetaARIMAUtils
+from src.meta.arima._base import MetaARIMAUtils
 from src.config import ORDER_MAX
 
 # data_name, group = 'M3', 'Monthly'
