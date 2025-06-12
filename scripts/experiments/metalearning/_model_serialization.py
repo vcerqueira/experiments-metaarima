@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from lightgbm import LGBMClassifier
+from xgboost import XGBRFClassifier
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
@@ -44,6 +45,8 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     y_test = y.iloc[test_index, :]
 
 mod = ClassifierChain(LGBMClassifier(verbosity=-1))
+mod = ClassifierChain(LGBMClassifier(verbosity=-1))
+mod = XGBRFClassifier()
 y_train_ = (y_train < 0.15).astype(int)
 mod.fit(X_train, y_train_)
 
