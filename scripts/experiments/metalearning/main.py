@@ -27,6 +27,8 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
 X, y, _, _, cv = mdr.read(fill_na_value=-1)
+print(y.shape)
+print(cv.shape)
 
 # note that this is cv on the time series set (80% of time series for train, 20% for testing)
 # partition is done at time series level, not in time dimension
@@ -106,4 +108,8 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         results.append(comp)
 
 results_df = pd.DataFrame(results)
-results_df.to_csv(f'assets/results/main/{data_name},{group}.csv', index=False)
+print(results_df.mean(numeric_only=True))
+print(results_df.dropna().mean(numeric_only=True))
+print(results_df.median(numeric_only=True))
+print(results_df.dropna().median(numeric_only=True))
+# results_df.to_csv(f'assets/results/main/{data_name},{group}.csv', index=False)

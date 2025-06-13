@@ -213,7 +213,8 @@ class _MetaARIMABaseMC:
 
 
 class MetaARIMAUtils:
-    ORDER_MAX = {'AR': 2, 'I': 1, 'MA': 2, 'S_AR': 1, 'S_I': 1, 'S_MA': 1, }
+    # ORDER_MAX = {'AR': 2, 'I': 1, 'MA': 2, 'S_AR': 1, 'S_I': 1, 'S_MA': 1, }
+    ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
 
     @staticmethod
     def get_model_order(mod, as_alias: bool = False, alias_freq: int = 1):

@@ -30,8 +30,8 @@ res = res.sort_values('d', ascending=False)
 
 res.loc[res['d'] > 0.025,:]['auto_config'].value_counts()
 
-print(results_df.mean())
-print(results_df.dropna().mean())
+print(results_df.mean(numeric_only=True))
+print(results_df.dropna().mean(numeric_only=True))
 
 
 

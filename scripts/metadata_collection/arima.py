@@ -11,11 +11,11 @@ from src.load_data.config import DATASETS
 from src.meta.arima._base import MetaARIMAUtils
 from src.config import ORDER_MAX
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
-data_name, group = 'M4', 'Monthly'
+# data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Quarterly'
 
 print(data_name, group)
@@ -28,23 +28,23 @@ train, test = data_loader.train_test_split(df, horizon=horizon)
 models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_MAX)
 print(len(models))
 
-PREV_RESULTS_CSV = ['arima,M4,Monthly_.csv']
+# PREV_RESULTS_CSV = ['arima,M4,Monthly_.csv']
 
 if __name__ == '__main__':
     outfile = Path(__file__).parent.parent.parent / 'assets' / 'metadata_cv'
 
-    result_files = []
-    for file in PREV_RESULTS_CSV:
-        r = pd.read_csv(f'{outfile}/{file}')
-        result_files += r['unique_id'].values.tolist()
+    # result_files = []
+    # for file in PREV_RESULTS_CSV:
+    #     r = pd.read_csv(f'{outfile}/{file}')
+    #     result_files += r['unique_id'].values.tolist()
 
     results = {}
     df_grouped = train.groupby('unique_id')
     for uid, uid_df in df_grouped:
 
         print(data_name, group, uid)
-        if uid in result_files:
-            continue
+        # if uid in result_files:
+        #     continue
 
         sf_auto = StatsForecast(models=[AutoARIMA(),
                                         SeasonalNaive(season_length=freq_int),
