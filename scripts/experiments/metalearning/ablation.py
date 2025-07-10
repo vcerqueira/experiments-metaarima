@@ -1,3 +1,4 @@
+# todo adicionar regr
 from pprint import pprint
 
 import pandas as pd
@@ -6,9 +7,14 @@ from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 from lightgbm import LGBMClassifier
 
 from src.meta.arima.meta_arima import MetaARIMA
-from src.meta.arima._base import MetaARIMAUtils
+from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
-from src.config import N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
+from src.config import (N_TRIALS,
+                        QUANTILE_THR,
+                        BASE_OPTIM,
+                        LAMBDA,
+                        N_FOLDS,
+                        RANDOM_SEED)
 
 data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -23,19 +29,15 @@ df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, ext
 
 train, _ = data_loader.train_test_split(df, horizon=horizon)
 
-feats = pd.read_csv(f'assets/features/features,{data_name},{group}.csv')
-cv = pd.read_csv(f'assets/metadata_cv/arima,{data_name},{group}.csv')
-cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
+mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-input_variables = feats.set_index('unique_id').columns.tolist()
-model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int, return_names=True)
-
-X = cv.loc[:, input_variables].fillna(-1)
-y = cv.loc[:, model_names]
+X, y, _, _, cv = mdr.read(fill_na_value=-1)
+print(y.shape)
+print(cv.shape)
 
 # note that this is cv on the time series set (80% of time series for train, 20% for testing)
 # partition is done at time series level, not in time dimension
-kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
+kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
 
 results = []
 for j, (train_index, test_index) in enumerate(kfcv.split(X)):

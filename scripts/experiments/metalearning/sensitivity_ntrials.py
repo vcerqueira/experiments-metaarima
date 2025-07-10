@@ -5,16 +5,17 @@ from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain
 from lightgbm import LGBMClassifier
 
-from src.meta.arima._base import MetaARIMAUtils
+from src.meta.arima._data_reader import MetadataReader
 from src.meta.arima.meta_arima import MetaARIMA
 from src.load_data.config import DATASETS
-from src.config import (ORDER_MAX,
-                        N_TRIALS_SPACE,
+from src.config import (N_TRIALS_SPACE,
                         MAX_N_TRIALS,
                         QUANTILE_THR,
                         LAMBDA,
                         MMR,
-                        BASE_OPTIM)
+                        BASE_OPTIM,
+                        N_FOLDS,
+                        RANDOM_SEED)
 
 data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -27,22 +28,15 @@ data_loader = DATASETS[data_name]
 
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, extended=True)
 
-train, test = data_loader.train_test_split(df, horizon=horizon)
+train, _ = data_loader.train_test_split(df, horizon=horizon)
 
-feats = pd.read_csv(f'assets/features/features,{data_name},{group}.csv')
-input_variables = feats.set_index('unique_id').columns.tolist()
+mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-cv = pd.read_csv(f'assets/metadata_cv/arima,{data_name},{group}.csv')
-cv = cv.merge(feats, on=['unique_id']).set_index('unique_id')
+X, y, _, _, cv = mdr.read(fill_na_value=-1)
+print(y.shape)
+print(cv.shape)
 
-model_names = MetaARIMAUtils.get_models_sf(season_length=freq_int,
-                                           return_names=True,
-                                           max_config=ORDER_MAX)
-
-X = cv.loc[:, input_variables].fillna(-1)
-y = cv.loc[:, model_names]
-
-kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
+kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
 
 results = []
 for j, (train_index, test_index) in enumerate(kfcv.split(X)):

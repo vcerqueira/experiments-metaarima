@@ -1,16 +1,10 @@
-from pprint import pprint
-
-import pandas as pd
-import numpy as np
-from sklearn.multioutput import ClassifierChain
 from lightgbm import LGBMClassifier
-from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.model_selection import RandomizedSearchCV
 from scipy.stats import randint, uniform
 
-
-from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
+from src.config import QUANTILE_THR
 
 data_name, group = 'M3', 'Monthly'
 print(data_name, group)
@@ -23,9 +17,8 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
 X, y, _, _, _ = mdr.read(fill_na_value=-1)
-y = y.apply(lambda x: (x <= x.quantile(.1)).astype(int), axis=1)
+y = y.apply(lambda x: (x <= x.quantile(QUANTILE_THR)).astype(int), axis=1)
 
-# Define parameter distributions for random search
 param_distributions = {
     'n_estimators': randint(100, 500),
     'learning_rate': uniform(0.01, 0.2),
@@ -37,15 +30,13 @@ param_distributions = {
     # 'boosting_type': ['gbdt', 'dart', 'goss']
 }
 
-# Initialize base model
 base_model = LGBMClassifier(verbosity=-1)
 
-# Initialize RandomizedSearchCV with single validation split
 random_search = RandomizedSearchCV(
     estimator=base_model,
     param_distributions=param_distributions,
-    n_iter=50,  # Number of parameter settings sampled
-    cv=3,  
+    n_iter=50,
+    cv=5,
     scoring='neg_log_loss',
     # scoring='roc_auc_ovr',
     # scoring='f1_weighted',
@@ -54,10 +45,7 @@ random_search = RandomizedSearchCV(
     verbose=2
 )
 
-# Fit RandomizedSearchCV
-random_search.fit(X, y.iloc[:,0])
+random_search.fit(X, y.iloc[:, 0])
 
-
-# Print best parameters and score
 print("Best parameters:", random_search.best_params_)
 print("Best validation score:", random_search.best_score_)

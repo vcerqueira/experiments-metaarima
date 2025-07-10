@@ -20,6 +20,7 @@ class MetaARIMA:
                  freq: str,
                  season_length: int,
                  n_trials: int,
+                 meta_regression: bool = False,
                  base_optim: str = 'complete',
                  quantile_thr: float = 0.05,
                  mmr_lambda: float = 0.75,
@@ -36,6 +37,7 @@ class MetaARIMA:
         self.use_mmr = use_mmr
         self.mmr_lambda = mmr_lambda
         self.base_optim = base_optim
+        self.meta_regression = meta_regression
         self.selected_config = ''
 
         self.is_fit: bool = False
@@ -55,17 +57,26 @@ class MetaARIMA:
         if self.use_mmr:
             self.corr_mat = Y.corr()
 
-        self.meta_model.fit(X, y)
+        if self.meta_regression:
+            self.meta_model.fit(X, Y)
+        else:
+            self.meta_model.fit(X, y)
+
         self.is_fit = True
 
     def meta_predict(self, X):
         assert self.is_fit
 
-        if self.use_mmr:
-            meta_preds = self.meta_model.predict_proba(X)
-            if isinstance(meta_preds, list):
-                meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
+        meta_preds = self.meta_model.predict_proba(X)
+        if isinstance(meta_preds, list):
+            meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
 
+        if self.meta_regression:
+            min_vals = meta_preds.min(axis=1, keepdims=True)
+            max_vals = meta_preds.max(axis=1, keepdims=True)
+            meta_preds = 1 - (meta_preds - min_vals) / (max_vals - min_vals)
+
+        if self.use_mmr:
             meta_preds = [pd.Series(x, index=self.model_names) for x in meta_preds]
 
             meta_preds_list = []
@@ -76,10 +87,6 @@ class MetaARIMA:
 
                 meta_preds_list.append(mod_list)
         else:
-            meta_preds = self.meta_model.predict_proba(X)
-            if isinstance(meta_preds, list):
-                meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
-
             preds = pd.DataFrame(meta_preds, columns=self.model_names)
 
             meta_preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(),

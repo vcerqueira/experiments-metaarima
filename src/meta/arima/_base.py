@@ -10,6 +10,8 @@ from statsmodels.stats.stattools import jarque_bera
 from statsforecast.models import ARIMA
 from statsforecast import StatsForecast
 
+from src.config import ORDER_MAX
+
 warnings.filterwarnings(action='ignore')
 
 
@@ -214,7 +216,7 @@ class _MetaARIMABaseMC:
 
 class MetaARIMAUtils:
     # ORDER_MAX = {'AR': 2, 'I': 1, 'MA': 2, 'S_AR': 1, 'S_I': 1, 'S_MA': 1, }
-    ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
+    # ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
 
     @staticmethod
     def get_model_order(mod, as_alias: bool = False, alias_freq: int = 1):
@@ -236,7 +238,7 @@ class MetaARIMAUtils:
                       alias_list: Optional[List[str]] = None):
 
         if max_config is None:
-            max_config_ = cls.ORDER_MAX
+            max_config_ = ORDER_MAX
         else:
             max_config_ = max_config
 

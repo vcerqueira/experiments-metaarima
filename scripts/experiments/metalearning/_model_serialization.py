@@ -1,3 +1,5 @@
+# todo create model based on m4
+
 from pprint import pprint
 
 import pandas as pd

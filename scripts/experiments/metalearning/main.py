@@ -1,3 +1,4 @@
+# add pca to main, adapt others accordingly
 from pprint import pprint
 
 import pandas as pd
@@ -9,7 +10,7 @@ from lightgbm import LGBMClassifier
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
-from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
+from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA, N_FOLDS, RANDOM_SEED
 
 data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
@@ -32,7 +33,7 @@ print(cv.shape)
 
 # note that this is cv on the time series set (80% of time series for train, 20% for testing)
 # partition is done at time series level, not in time dimension
-kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
+kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
 
 results = []
 for j, (train_index, test_index) in enumerate(kfcv.split(X)):
@@ -52,6 +53,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                            season_length=freq_int,
                            n_trials=N_TRIALS,
                            quantile_thr=QUANTILE_THR,
+                           meta_regression=False,
                            use_mmr=MMR,
                            base_optim=BASE_OPTIM,
                            mmr_lambda=LAMBDA)
@@ -93,7 +95,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         comp = {
             'MetaARIMA': err_meta,
             'AutoARIMA': err_auto,
-            'AutoARIMA2': err_auto2,
+            'AutoARIMA2': err_auto2,  # sanity check
             'ARIMA(2,1,2)': err_arima212,
             'ARIMA(2,1,2)(1,0,0)': err_arima2121,
             'ARIMA(1,0,0)': err_arima100,
