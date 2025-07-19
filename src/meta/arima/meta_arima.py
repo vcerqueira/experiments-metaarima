@@ -4,6 +4,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
+from src.meta.arima.multilabel_pca import MultiLabelPCARegressor
 from src.meta.arima._base import (MetaARIMAUtils,
                                   _MetaARIMABase,
                                   _HalvingMetaARIMABase,
@@ -21,12 +22,12 @@ class MetaARIMA:
                  season_length: int,
                  n_trials: int,
                  meta_regression: bool = False,
+                 target_pca: bool = False,
                  base_optim: str = 'complete',
                  quantile_thr: float = 0.05,
                  mmr_lambda: float = 0.75,
                  use_mmr: bool = False):
 
-        self.meta_model = model
         self.n_trials = n_trials
         self.quantile_thr = quantile_thr
         self.model_names = None
@@ -34,11 +35,16 @@ class MetaARIMA:
         self.season_length = season_length
         self.model = None
         self.corr_mat = None
+        self.target_pca = target_pca
         self.use_mmr = use_mmr
         self.mmr_lambda = mmr_lambda
         self.base_optim = base_optim
         self.meta_regression = meta_regression
         self.selected_config = ''
+        if self.target_pca:
+            self.meta_model = MultiLabelPCARegressor(mod = model)
+        else:
+            self.meta_model = model
 
         self.is_fit: bool = False
 

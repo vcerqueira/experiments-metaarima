@@ -4,9 +4,11 @@ import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier, RegressorChain
 from lightgbm import LGBMClassifier, LGBMRegressor
+from xgboost import XGBRFClassifier, XGBRFRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
+
 from src.load_data.config import DATASETS
 from src.config import (N_TRIALS,
                         QUANTILE_THR,
@@ -52,6 +54,8 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     mod = ClassifierChain(LGBMClassifier(verbosity=-1))
     mod_reg = RegressorChain(LGBMRegressor(verbosity=-1))
     mod_mo = MultiOutputClassifier(LGBMClassifier(verbosity=-1))
+
+    mod_pca = MultiLabelPCARegressor(mod = XGBRFRegressor())
 
     meta_arima = MetaARIMA(model=mod,
                            freq=freq_str,
