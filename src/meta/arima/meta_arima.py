@@ -1,4 +1,5 @@
 import warnings
+import copy
 from typing import List
 
 import numpy as np
@@ -42,9 +43,9 @@ class MetaARIMA:
         self.meta_regression = meta_regression
         self.selected_config = ''
         if self.target_pca:
-            self.meta_model = MultiLabelPCARegressor(mod = model)
+            self.meta_model = copy.deepcopy(MultiLabelPCARegressor(mod=model))
         else:
-            self.meta_model = model
+            self.meta_model = copy.deepcopy(model)
 
         self.is_fit: bool = False
 
@@ -73,7 +74,11 @@ class MetaARIMA:
     def meta_predict(self, X):
         assert self.is_fit
 
-        meta_preds = self.meta_model.predict_proba(X)
+        if self.meta_regression:
+            meta_preds = self.meta_model.predict(X)
+        else:
+            meta_preds = self.meta_model.predict_proba(X)
+
         if isinstance(meta_preds, list):
             meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
 

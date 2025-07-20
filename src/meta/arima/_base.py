@@ -182,11 +182,14 @@ class _MetaARIMABaseMC:
             start_idx = np.random.randint(0, len(df) - n_samples + 1)
             sample_df = df.iloc[start_idx:start_idx + n_samples].copy()
 
-            self.sf.fit(df=sample_df)
+            try:
+                self.sf.fit(df=sample_df)
 
-            # Store AICc values for this trial
-            for i in range(self.nmodels):
-                aicc_trials[trial, i] = self.sf.fitted_[0][i].model_['aicc']
+                for i in range(self.nmodels):
+                    aicc_trials[trial, i] = self.sf.fitted_[0][i].model_['aicc']
+            except ValueError:
+                for i in range(self.nmodels):
+                    aicc_trials[trial, i] = 1e10
 
         # Calculate average AICc across trials for each model
         avg_aicc = np.mean(aicc_trials, axis=0)
@@ -196,8 +199,8 @@ class _MetaARIMABaseMC:
 
         best_mod = self.sf.fitted_[0][best_idx]
         best_config = MetaARIMAUtils.get_model_order(best_mod.model_,
-                                                      as_alias=True,
-                                                      alias_freq=self.season_length)
+                                                     as_alias=True,
+                                                     alias_freq=self.season_length)
 
         # Refit the best model with all data
         self.initialize_sf(config_space=[best_config])

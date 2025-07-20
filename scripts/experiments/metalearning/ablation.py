@@ -2,7 +2,7 @@ from pprint import pprint
 
 import pandas as pd
 from sklearn.model_selection import KFold
-from sklearn.multioutput import ClassifierChain, MultiOutputClassifier, RegressorChain
+from sklearn.multioutput import ClassifierChain, MultiOutputClassifier, RegressorChain, MultiOutputRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from xgboost import XGBRFClassifier, XGBRFRegressor
 
@@ -51,11 +51,13 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     X_test = X.iloc[test_index, :]
     y_test = y.iloc[test_index, :]
 
+    # X_train = X_train.head(300)
+    # y_train = y_train.head(300)
+
     mod = ClassifierChain(LGBMClassifier(verbosity=-1))
     mod_reg = RegressorChain(LGBMRegressor(verbosity=-1))
     mod_mo = MultiOutputClassifier(LGBMClassifier(verbosity=-1))
-
-    mod_pca = MultiLabelPCARegressor(mod = XGBRFRegressor())
+    mod_reg_mo = RegressorChain(LGBMRegressor(verbosity=-1))
 
     meta_arima = MetaARIMA(model=mod,
                            freq=freq_str,
@@ -65,6 +67,16 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                            use_mmr=True,
                            base_optim=BASE_OPTIM,
                            mmr_lambda=LAMBDA)
+
+    meta_arima_pca = MetaARIMA(model=mod_reg_mo,
+                               freq=freq_str,
+                               season_length=freq_int,
+                               n_trials=N_TRIALS,
+                               target_pca=True,
+                               quantile_thr=QUANTILE_THR,
+                               use_mmr=True,
+                               base_optim=BASE_OPTIM,
+                               mmr_lambda=LAMBDA)
 
     meta_arima_regr = MetaARIMA(model=mod_reg,
                                 freq=freq_str,
@@ -115,6 +127,8 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     print('Fitting...')
     print('\t MetaARIMA')
     meta_arima.meta_fit(X_train, y_train)
+    print('\t MetaARIMA(PCA)')
+    meta_arima_pca.meta_fit(X_train, y_train)
     print('\t MetaARIMA(R)')
     meta_arima_regr.meta_fit(X_train, y_train)
     print('\t MetaARIMA(No-SH)')
@@ -127,6 +141,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     meta_arima_nommr.meta_fit(X_train, y_train)
 
     pred_list = meta_arima.meta_predict(X_test)
+    pred_list_pca = meta_arima_pca.meta_predict(X_test)
     pred_list_regr = meta_arima_regr.meta_predict(X_test)
     pred_list_nosh = meta_arima_nosh.meta_predict(X_test)
     pred_list_mc = meta_arima_mc.meta_predict(X_test)
@@ -139,6 +154,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         df_uid = train.query(f'unique_id=="{uid}"').copy()
 
         meta_arima.fit(df_uid, config_space=pred_list[i])
+        meta_arima_pca.fit(df_uid, config_space=pred_list_pca[i])
         meta_arima_regr.fit(df_uid, config_space=pred_list_regr[i])
         meta_arima_nosh.fit(df_uid, config_space=pred_list_nosh[i])
         meta_arima_mc.fit(df_uid, config_space=pred_list_mc[i])
@@ -146,6 +162,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         meta_arima_nommr.fit(df_uid, config_space=pred_list_nommr[i])
 
         err_meta = cv.loc[uid, meta_arima.selected_config]
+        err_meta_pca = cv.loc[uid, meta_arima_pca.selected_config]
         err_meta_regr = cv.loc[uid, meta_arima_regr.selected_config]
         err_meta_nosh = cv.loc[uid, meta_arima_nosh.selected_config]
         err_meta_mc = cv.loc[uid, meta_arima_mc.selected_config]
@@ -154,7 +171,8 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 
         comp = {
             'MetaARIMA': err_meta,
-            'MetaARIMA(R)': err_meta,
+            'MetaARIMA(PCA)': err_meta_pca,
+            'MetaARIMA(R)': err_meta_regr,
             'MetaARIMA(No-SH)': err_meta_nosh,
             'MetaARIMA(MC)': err_meta_mc,
             'MetaARIMA(MO)': err_meta_mo,
@@ -162,6 +180,10 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         }
 
         pprint(comp)
+
+        results_df = pd.DataFrame(results)
+        print(results_df.mean())
+        print(results_df.median())
 
         results.append(comp)
 
