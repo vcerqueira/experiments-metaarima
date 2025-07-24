@@ -23,11 +23,11 @@ class MetaARIMA:
                  season_length: int,
                  n_trials: int,
                  meta_regression: bool = False,
-                 target_pca: bool = False,
-                 base_optim: str = 'complete',
+                 target_pca: bool = True,
+                 base_optim: str = 'halving',
                  quantile_thr: float = 0.05,
                  mmr_lambda: float = 0.75,
-                 use_mmr: bool = False):
+                 use_mmr: bool = True):
 
         self.n_trials = n_trials
         self.quantile_thr = quantile_thr
