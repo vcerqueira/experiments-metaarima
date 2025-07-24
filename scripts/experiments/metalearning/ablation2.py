@@ -17,25 +17,6 @@ from src.config import (N_TRIALS,
                         N_FOLDS,
                         RANDOM_SEED)
 
-# refazer ablation tendo em conta os resultados parciais:
-# MetaARIMA            0.065058
-# MetaARIMA(PCA)       0.064036
-# MetaARIMA(PCA,CH)    0.066172
-# MetaARIMA(R)         0.066558
-# MetaARIMA(No-SH)     0.080142
-# MetaARIMA(MC)        0.069247
-# MetaARIMA(MO)        0.066389
-# MetaARIMA(No-MMR)    0.079001
-# dtype: float64
-# MetaARIMA            0.037971
-# MetaARIMA(PCA)       0.036474
-# MetaARIMA(PCA,CH)    0.037603
-# MetaARIMA(R)         0.038617
-# MetaARIMA(No-SH)     0.038699
-# MetaARIMA(MC)        0.038378
-# MetaARIMA(MO)        0.039092
-# MetaARIMA(No-MMR)    0.045976
-
 data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
@@ -70,6 +51,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     X_test = X.iloc[test_index, :]
     y_test = y.iloc[test_index, :]
 
+    # todo change this after sanity checks
     X_train = X_train.head(300)
     y_train = y_train.head(300)
 
