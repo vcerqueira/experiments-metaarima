@@ -64,6 +64,7 @@ for j, (data_name, group) in enumerate(target_sets):
     tgt_mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=tgt_freq_int)
     tgt_X, _, _, _, tgt_cv = tgt_mdr.read(fill_na_value=-1)
 
+    # todo
     tgt_X = tgt_X.head(200)
 
     pred_list = meta_arima.meta_predict(tgt_X)
