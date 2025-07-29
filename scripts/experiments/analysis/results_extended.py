@@ -29,8 +29,8 @@ for data_name, group in data_pairs:
 
     df = X.merge(results_df, on='unique_id')
     # df['ETS_delta'] = 100 * ((df['AutoETS'] - df['MetaARIMA']) / df['MetaARIMA'])
-    df['ETS_delta'] = (df['AutoETS'] - df['MetaARIMA'] < -0.02).astype(int)
-    df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.02).astype(int)
+    df['ETS_delta'] = (df['AutoETS'] - df['MetaARIMA'] < -0.04).astype(int)
+    df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.04).astype(int)
     # df['ARIMA_delta'] = 100 * ((df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA']) / df['MetaARIMA'])
 
     all_results.append(df)
