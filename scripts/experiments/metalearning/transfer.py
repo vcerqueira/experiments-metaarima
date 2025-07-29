@@ -3,8 +3,7 @@ from pprint import pprint
 
 import pandas as pd
 import numpy as np
-from sklearn.multioutput import ClassifierChain
-from lightgbm import LGBMClassifier
+from xgboost import XGBRFRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
@@ -14,6 +13,7 @@ from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 # data_name, group = 'M3', 'Monthly'
 
 target_sets = [
+    ('M3', 'Monthly'),# este não foi incluido
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
@@ -37,7 +37,7 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 mdr = MetadataReader(dataset_name=source_data_name, group=source_group, freq_int=freq_int)
 X, y, _, _, cv = mdr.read(fill_na_value=-1)
 
-mod = ClassifierChain(LGBMClassifier(verbosity=-1))
+mod = XGBRFRegressor()
 
 meta_arima = MetaARIMA(model=mod,
                        freq=freq_str,
@@ -64,8 +64,7 @@ for j, (data_name, group) in enumerate(target_sets):
     tgt_mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=tgt_freq_int)
     tgt_X, _, _, _, tgt_cv = tgt_mdr.read(fill_na_value=-1)
 
-    # todo
-    tgt_X = tgt_X.head(200)
+    # tgt_X = tgt_X.head(200)
 
     pred_list = meta_arima.meta_predict(tgt_X)
 
@@ -117,6 +116,8 @@ for j, (data_name, group) in enumerate(target_sets):
         }
 
         pprint(comp)
+        results_df = pd.DataFrame(results)
+        print(results_df.mean(numeric_only=True))
 
         results.append(comp)
 

@@ -112,6 +112,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 results_df = pd.DataFrame(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
+print(results_df.drop(columns=['unique_id']).rank(axis=1).mean(numeric_only=True))
 print(results_df.dropna().mean(numeric_only=True))
 print(results_df.dropna().median(numeric_only=True))
 
