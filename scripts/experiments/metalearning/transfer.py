@@ -1,4 +1,5 @@
 import re
+import copy
 from pprint import pprint
 
 import pandas as pd
@@ -10,10 +11,9 @@ from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
 from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 
-# data_name, group = 'M3', 'Monthly'
-
+size_thr = 250
 target_sets = [
-    ('M3', 'Monthly'),# este não foi incluido
+    ('M3', 'Monthly'),
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
@@ -50,6 +50,8 @@ meta_arima = MetaARIMA(model=mod,
 
 meta_arima.meta_fit(X, y)
 # meta_arima.meta_fit(X.head(700), y.head(700))
+meta_arima_lg = copy.deepcopy(meta_arima)
+meta_arima_lg.n_trials = int(2*N_TRIALS)
 
 results = []
 # for j, (train_index, test_index) in enumerate(kfcv.split(X)):
@@ -67,6 +69,7 @@ for j, (data_name, group) in enumerate(target_sets):
     # tgt_X = tgt_X.head(200)
 
     pred_list = meta_arima.meta_predict(tgt_X)
+    pred_list_lg = meta_arima_lg.meta_predict(tgt_X)
 
     for i, (uid, x) in enumerate(tgt_X.iterrows()):
         # uid, x = tgt_X.iloc[0].name, tgt_X.iloc[0]
@@ -74,15 +77,32 @@ for j, (data_name, group) in enumerate(target_sets):
 
         df_uid = tgt_train.query(f'unique_id=="{uid}"').copy()
 
-        try:
-            meta_arima.fit(df_uid, config_space=pred_list[i])
-        except ValueError:
-            continue
+        if df_uid.shape[0] < size_thr:
+            try:
+                meta_arima_lg.fit(df_uid, config_space=pred_list_lg[i])
+            except ValueError:
+                continue
+
+            selected_conf = meta_arima_lg.selected_config
+        else:
+            try:
+                meta_arima.fit(df_uid, config_space=pred_list[i])
+            except ValueError:
+                continue
+
+            selected_conf = meta_arima.selected_config
+
+
+
+        # try:
+        #     meta_arima.fit(df_uid, config_space=pred_list[i])
+        # except ValueError:
+        #     continue
 
         auto_arima_config = tgt_cv.loc[uid, 'auto_config']
-        meta_arima.selected_config = re.sub(r'\[[^\]]*\]', f'[{tgt_freq_int}]', meta_arima.selected_config)
+        selected_conf = re.sub(r'\[[^\]]*\]', f'[{tgt_freq_int}]', selected_conf)
 
-        err_meta = tgt_cv.loc[uid, meta_arima.selected_config]
+        err_meta = tgt_cv.loc[uid, selected_conf]
         err_auto = tgt_cv.loc[uid, 'score_AutoARIMA']
         err_snaive = tgt_cv.loc[uid, 'score_SeasNaive']
         err_theta = tgt_cv.loc[uid, 'score_AutoTheta']
