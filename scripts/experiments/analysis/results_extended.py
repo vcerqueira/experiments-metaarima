@@ -10,8 +10,8 @@ data_pairs = [
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
-    ('M4', 'Monthly'),
-    ('M4', 'Quarterly')
+    # ('M4', 'Monthly'),
+    # ('M4', 'Quarterly')
 ]
 
 RESULTS_DIR = 'assets/results/main'
@@ -31,6 +31,7 @@ for data_name, group in data_pairs:
     # df['ETS_delta'] = 100 * ((df['AutoETS'] - df['MetaARIMA']) / df['MetaARIMA'])
     df['ETS_delta'] = (df['AutoETS'] - df['MetaARIMA'] < -0.04).astype(int)
     df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.04).astype(int)
+    df['SN_delta'] = (df['SeasonalNaive'] - df['MetaARIMA'])
     # df['ARIMA_delta'] = 100 * ((df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA']) / df['MetaARIMA'])
 
     all_results.append(df)
@@ -48,15 +49,16 @@ print(results_df.dropna().rank(axis=1).mean())
 # results_df.corr(method='pearson')['ETS_delta'].sort_values()
 # results_df.corr(method='kendall')['ETS_delta'].sort_values()
 # results_df.corr(method='kendall')['ARIMA_delta'].sort_values()
+# results_df.corr(method='kendall')['SN_delta'].sort_values()
 # results_df.corr()['ARIMA_delta']
 
 print(results_df.loc[results_df['AutoARIMA2'].isna(), :].mean())
 print(results_df.loc[results_df['AutoARIMA2'].isna(), :].median())
-methods = ['MetaARIMA','AutoARIMA','ARIMA(2,1,2)(1,0,0)','AutoETS']
+methods = ['MetaARIMA','AutoARIMA','ARIMA(2,1,2)(1,0,0)','AutoETS','SN_delta']
 
 df2 = results_df.copy()
 # df2 = df2.loc[df2['seasonal_strength'] > 0.75, :]
-df2 = df2.loc[df2['series_length'] > 700, :]
+df2 = df2.loc[df2['series_length'] > 50, :]
 # df2 = df2.loc[df2['lumpiness'] > 1, :]
 # df2 = df2.loc[df2['entropy'] > .75, :]
 # df2 = df2.loc[df2['nonlinearity'] < 1, :]
