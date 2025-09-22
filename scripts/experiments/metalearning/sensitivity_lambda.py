@@ -83,7 +83,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
             try:
                 meta_arima.fit(df_uid, config_space=uid_list[i])
             except ValueError:
-                scores[f'MetaARIMA({lambda__})'] = np.nan
+                scores[f'MetaARIMA({str(lambda__)})'] = np.nan
                 continue
 
             err_meta_mmr = cv.loc[uid, meta_arima.selected_config]

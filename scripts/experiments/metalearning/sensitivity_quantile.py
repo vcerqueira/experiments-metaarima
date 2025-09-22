@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.multioutput import ClassifierChain
-from lightgbm import LGBMClassifier
+from xgboost import XGBRFRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
@@ -51,7 +50,7 @@ for quantile_ in QUANTILE_SPACE:
         X_test = X.iloc[test_index, :]
         y_test = y.iloc[test_index, :]
 
-        mod = ClassifierChain(LGBMClassifier(verbosity=-1))
+        mod = XGBRFRegressor()
 
         meta_arima = MetaARIMA(model=mod,
                                freq=freq_str,
@@ -81,7 +80,7 @@ for quantile_ in QUANTILE_SPACE:
 
             results.append(err_metaarima)
 
-    quantile_results[f'MetaARIMA({quantile_})'] = np.mean(results)
+    quantile_results[f'MetaARIMA({str(quantile_)})'] = np.mean(results)
 
 results_df = pd.Series(quantile_results)
 results_df.to_csv(f'assets/results/sensitivity/quantile,{data_name},{group}.csv')
