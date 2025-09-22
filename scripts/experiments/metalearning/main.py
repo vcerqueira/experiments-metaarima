@@ -50,6 +50,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                            n_trials=N_TRIALS,
                            quantile_thr=QUANTILE_THR,
                            meta_regression=False,
+                           target_pca=True,
                            use_mmr=MMR,
                            base_optim=BASE_OPTIM,
                            mmr_lambda=LAMBDA)

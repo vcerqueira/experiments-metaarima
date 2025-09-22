@@ -3,8 +3,7 @@ from pprint import pprint
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.multioutput import ClassifierChain
-from lightgbm import LGBMClassifier
+from xgboost import XGBRFRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
@@ -18,9 +17,9 @@ from src.config import (LAMBDA_SPACE,
                         N_FOLDS,
                         RANDOM_SEED)
 
-data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
+data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
@@ -50,7 +49,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     X_test = X.iloc[test_index, :]
     y_test = y.iloc[test_index, :]
 
-    mod = ClassifierChain(LGBMClassifier(verbosity=-1))
+    mod = XGBRFRegressor()
 
     print('MetaARIMA fitting')
     meta_arima = MetaARIMA(model=mod,
