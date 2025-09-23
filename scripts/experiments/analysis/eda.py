@@ -9,6 +9,8 @@ all_results = []
 mdr = MetadataReader(dataset_name='M3', group='Monthly', freq_int=12)
 X, y, _, _, cv = mdr.read(fill_na_value=-1)
 
+cv.loc[:,cv.columns.str.startswith('coef')].iloc[0]
+
 corr_scores = y.corr()
 corr_scores['ARIMA(0,0,0)(0,0,0)[12]'].sort_values()
 
