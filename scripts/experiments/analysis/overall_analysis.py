@@ -25,7 +25,8 @@ for data_name, group in DATASET_PAIRS:
 
     mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-    results_df = pd.read_csv(f'{RESULTS_DIR}/{data_name},{group}.csv')
+    results_df_ = pd.read_csv(f'{RESULTS_DIR}/{data_name},{group}.csv')
+    results_df_['Dataset'] = f'{data_name}-{group[0]}'
 
     # X, y, _, _, cv = mdr.read(fill_na_value=-1)
     # df = X.merge(results_df, on='unique_id')
@@ -33,7 +34,7 @@ for data_name, group in DATASET_PAIRS:
     # df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.04).astype(int)
     # df['SN_delta'] = (df['SeasonalNaive'] - df['MetaARIMA'])
 
-    all_results.append(results_df)
+    all_results.append(results_df_)
 
 results_df = pd.concat(all_results, ignore_index=True)
 results_df = results_df.drop(columns='unique_id')
@@ -41,6 +42,13 @@ results_df = results_df.drop(columns='unique_id')
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
 print(results_df.rank(axis=1, na_option='bottom').mean())
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+results_df.groupby('Dataset').mean(numeric_only=True).T
+results_df.groupby('Dataset').median(numeric_only=True).T
+results_df.groupby('Dataset').rank(axis=1, na_option='bottom').mean().T
+
 
 s = results_df.drop(columns=['AutoARIMA2']).median(numeric_only=True).sort_values()
 
