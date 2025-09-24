@@ -103,7 +103,3 @@ results_df.to_csv(f'assets/results/sensitivity/lambda,{data_name},{group}.csv', 
 
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
-print(results_df.rank(axis=1, na_option='bottom').mean())
-print(results_df.dropna().mean())
-print(results_df.dropna().median())
-print(results_df.dropna().rank(axis=1).mean())

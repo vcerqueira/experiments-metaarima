@@ -17,11 +17,7 @@ from src.config import (N_TRIALS_SPACE,
                         RANDOM_SEED)
 
 data_name, group = 'M3', 'Monthly'
-# data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
-# data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Weekly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
@@ -98,7 +94,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 
 results_df = pd.DataFrame(results)
 
-results_df.to_csv(f'assets/results/n_trials/{data_name},{group}.csv', index=False)
+results_df.to_csv(f'assets/results/sensitivity/ntrials,{data_name},{group}.csv', index=False)
 
 print(results_df.mean(numeric_only=True))
 print(results_df.median())
