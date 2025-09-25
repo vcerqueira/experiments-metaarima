@@ -9,7 +9,7 @@ LAMBDA = 0.75
 BASE_OPTIM = 'halving'
 MMR = True
 # N_TRIALS = 20
-N_TRIALS = 30
+N_TRIALS = 25
 MAX_N_TRIALS = 94
 N_LAMBDAS = 11
 LAMBDA_SPACE = np.linspace(start=0, stop=1, num=N_LAMBDAS)
