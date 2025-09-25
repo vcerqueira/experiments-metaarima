@@ -13,5 +13,5 @@ N_TRIALS = 30
 MAX_N_TRIALS = 94
 N_LAMBDAS = 11
 LAMBDA_SPACE = np.linspace(start=0, stop=1, num=N_LAMBDAS)
-QUANTILE_SPACE = np.linspace(start=0.025, stop=.25, num=10)
+QUANTILE_SPACE = np.linspace(start=0.025, stop=.35, num=16)
 N_FOLDS = 5
