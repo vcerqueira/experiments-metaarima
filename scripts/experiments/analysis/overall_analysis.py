@@ -7,12 +7,12 @@ import plotnine as p9
 from src.meta.arima._data_reader import MetadataReader
 
 DATASET_PAIRS = [
-    ('M3', 'Monthly'),
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
-    ('M4', 'Monthly'),
-    ('M4', 'Quarterly')
+    # ('M3', 'Monthly'),
+    # ('M4', 'Monthly'),
+    # ('M4', 'Quarterly')
 ]
 
 RESULTS_DIR = 'assets/results/main'
@@ -39,15 +39,15 @@ for data_name, group in DATASET_PAIRS:
 results_df = pd.concat(all_results, ignore_index=True)
 results_df = results_df.drop(columns='unique_id')
 
-print(results_df.mean(numeric_only=True))
-print(results_df.median(numeric_only=True))
-print(results_df.rank(axis=1, na_option='bottom').mean())
+print(results_df.drop(columns='Dataset').mean(numeric_only=True))
+print(results_df.drop(columns='Dataset').median(numeric_only=True))
+print(results_df.drop(columns='Dataset').rank(axis=1, na_option='bottom').mean())
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
-results_df.groupby('Dataset').mean(numeric_only=True).T
-results_df.groupby('Dataset').median(numeric_only=True).T
-results_df.groupby('Dataset').rank(axis=1, na_option='bottom').mean().T
+print(results_df.groupby('Dataset').mean(numeric_only=True).T)
+print(results_df.groupby('Dataset').median(numeric_only=True).T)
+# results_df.groupby('Dataset').rank(axis=1, na_option='bottom').mean().T
 
 
 s = results_df.drop(columns=['AutoARIMA2']).median(numeric_only=True).sort_values()
