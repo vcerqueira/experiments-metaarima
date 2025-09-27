@@ -11,11 +11,11 @@ from src.load_data.config import DATASETS
 from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA, N_FOLDS, RANDOM_SEED
 
 # data_name, group = 'M3', 'Monthly'
-# data_name, group = 'M3', 'Quarterly'
+data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
-data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Quarterly'
+# data_name, group = 'M4', 'Monthly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 

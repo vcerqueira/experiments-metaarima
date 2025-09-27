@@ -14,9 +14,9 @@ from src.config import (QUANTILE_SPACE,
                         N_FOLDS,
                         RANDOM_SEED)
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
