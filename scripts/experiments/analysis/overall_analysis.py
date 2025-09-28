@@ -10,7 +10,7 @@ DATASET_PAIRS = [
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
-    # ('M3', 'Monthly'),
+    ('M3', 'Monthly'),
     # ('M4', 'Monthly'),
     # ('M4', 'Quarterly')
 ]
