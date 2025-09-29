@@ -14,8 +14,8 @@ from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA, N_FOLDS,
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
-data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Quarterly'
+# data_name, group = 'M4', 'Monthly'
+data_name, group = 'M4', 'Quarterly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
@@ -92,9 +92,9 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         comp = {
             'MetaARIMA': err_meta,
             'AutoARIMA': err_auto,
-            'AutoARIMA2': err_auto2,  # sanity check
+            # 'AutoARIMA2': err_auto2,  # sanity check
             'ARIMA(2,1,2)': err_arima212,
-            'ARIMA(2,1,2)(1,0,0)': err_arima2121,
+            # 'ARIMA(2,1,2)(1,0,0)': err_arima2121,
             'ARIMA(1,0,0)': err_arima100,
             'SeasonalNaive': err_snaive,
             'AutoTheta': err_theta,

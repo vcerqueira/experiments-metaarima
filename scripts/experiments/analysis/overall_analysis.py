@@ -11,8 +11,8 @@ DATASET_PAIRS = [
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
     ('M3', 'Monthly'),
-    # ('M4', 'Monthly'),
-    # ('M4', 'Quarterly')
+    ('M4', 'Monthly'),
+    ('M4', 'Quarterly')
 ]
 
 RESULTS_DIR = 'assets/results/main'
