@@ -9,11 +9,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 df = read_results()
 
-
-
-# overall details on table
 perf_by_ds = df.groupby(['Dataset']).mean(numeric_only=True)
-perf_by_all_ext = add_model_averages_and_ranks(df=perf_by_all).sort_index(level=['model'], ascending=[False])
+
+df.groupby(['Dataset']).mean(numeric_only=True).mean()
+df.groupby('Dataset').apply(lambda x: x.rank(axis=1)).mean()
+df.groupby(['Dataset']).mean(numeric_only=True).median()
 
 avg_perf = perf_by_all.reset_index().groupby('model').mean(numeric_only=True)
 avg_rank = perf_by_all.rank(axis=1).reset_index(level='model').groupby('model').mean(numeric_only=True).round(2)

@@ -66,7 +66,7 @@ def read_results(file_path: str = RESULTS_DIR) -> pd.DataFrame:
         all_results.append(results_df_)
 
     df = pd.concat(all_results, ignore_index=True)
-    df = df.drop(columns='unique_id')
+    df = df.drop(columns=['unique_id','AutoARIMA2','ARIMA(2,1,2)(1,0,0)'])
 
     return df
 
