@@ -3,23 +3,27 @@ import re
 from pprint import pprint
 
 import numpy as np
+import pandas as pd
 import plotnine as p9
 
 from src.meta.arima._data_reader import MetadataReader
 
-import pandas as pd
-import plotnine as p9
-
 RESULTS_DIR = 'assets/results/main'
 
-DS_MAPPER = {
-    'M4-Monthly': 'M4-M',
-    'M4-Quarterly': 'M4-Q',
-    'M3-Monthly': 'M3-M',
-    'M3-Quarterly': 'M3-Q',
-    'Tourism-Monthly': 'T-M',
-    'Tourism-Quarterly': 'T-Q',
-}
+APPROACH_COLORS = [
+    '#2c3e50',  # Dark slate blue
+    '#34558b',  # Royal blue
+    '#4b7be5',  # Bright blue
+    '#6db1bf',  # Light teal
+    '#bf9b7a',  # Warm tan
+    '#d17f5e',  # Warm coral
+    '#c44536',  # Burnt orange red
+    '#8b1e3f',  # Deep burgundy
+    '#472d54',  # Deep purple
+    '#855988',  # Muted mauve
+    '#2d5447',  # Forest green
+    '#507e6d'  # Sage green
+]
 
 DATASET_PAIRS = [
     ('M3', 'Quarterly'),
@@ -47,11 +51,10 @@ def read_results(file_path: str = RESULTS_DIR) -> pd.DataFrame:
     for data_name, group in DATASET_PAIRS:
         print(data_name, group)
 
-        freq_int = 12 if group == 'Monthly' else 4
-
         results_df_ = pd.read_csv(f'{file_path}/{data_name},{group}.csv')
-        results_df_['Dataset'] = f'{data_name}-{group[0]}'
+        results_df_['Dataset'] = f'{data_name}-{group[0]}' if data_name != 'Tourism' else f'T-{group[0]}'
 
+        # freq_int = 12 if group == 'Monthly' else 4
         # mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
         # X, y, _, _, cv = mdr.read(fill_na_value=-1)
         # print(X)

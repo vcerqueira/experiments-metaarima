@@ -6,15 +6,6 @@ import plotnine as p9
 
 from src.utils import read_results
 
-DATASET_PAIRS = [
-    ('M3', 'Quarterly'),
-    ('Tourism', 'Monthly'),
-    ('Tourism', 'Quarterly'),
-    ('M3', 'Monthly'),
-    ('M4', 'Monthly'),
-    ('M4', 'Quarterly')
-]
-
 results_df = read_results()
 
 print(results_df.drop(columns='Dataset').mean(numeric_only=True))

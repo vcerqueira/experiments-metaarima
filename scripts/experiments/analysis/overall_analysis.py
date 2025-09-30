@@ -1,100 +1,18 @@
 import pandas as pd
 import plotnine as p9
 
-from src.utils import to_latex_tab, THEME
+from src.utils import to_latex_tab, THEME, read_results
 
 import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-df = read_results('mase')
-df = df.drop(columns=['derived_ensemble', 'derived'])
+df = read_results()
 
 
-def add_model_averages_and_ranks(df):
-    # Calculate ranks for each metric (lower values are better)
-    # Using axis=1 to rank across columns for each row
-    rank_df = df.rank(axis=1, ascending=True)
-
-    # Create a new DataFrame to store the result
-    result_dfs = []
-
-    # Process each model separately to keep data together
-    for model in df.index.get_level_values('model').unique():
-        # Extract model data
-        model_data = df.xs(model, level='model')
-        model_ranks = rank_df.xs(model, level='model')
-
-        # Calculate averages
-        model_avg = model_data.mean()
-        model_rank_avg = model_ranks.mean()
-
-        # Create average and average rank DataFrames with MultiIndex
-        avg_df = pd.DataFrame([model_avg], index=pd.MultiIndex.from_tuples([(model, 'Avg.')],
-                                                                           names=['model', 'ds']))
-        avg_rank_df = pd.DataFrame([model_rank_avg], index=pd.MultiIndex.from_tuples([(model, 'Avg. Rank')],
-                                                                                     names=['model', 'ds']))
-
-        # Add original model data with MultiIndex
-        model_with_index = pd.DataFrame(model_data.values,
-                                        index=pd.MultiIndex.from_product([[model], model_data.index],
-                                                                         names=['model', 'ds']),
-                                        columns=model_data.columns)
-
-        # Combine model data with averages (keeping them together)
-        model_result = pd.concat([model_with_index, avg_df.round(4), avg_rank_df.round(2)])
-        result_dfs.append(model_result)
-
-    # Combine all model results
-    final_result = pd.concat(result_dfs)
-
-    return final_result
-
-
-COLUMN_MAP = {
-    'MagnitudeWarping': 'M-Warp',
-    'TimeWarping': 'T-Warp',
-    'SeasonalMBB': 'MBB',
-    'Jittering': 'Jitter',
-    'original': 'Original',
-    'SeasonalNaive': 'SNaive',
-    'derived': 'QGTS(D)',
-    'QGTSE': 'Grasynda(E)',
-    'QGTS': 'Grasynda',
-}
-
-APPROACH_COLORS = [
-    '#2c3e50',  # Dark slate blue
-    '#34558b',  # Royal blue
-    '#4b7be5',  # Bright blue
-    '#6db1bf',  # Light teal
-    '#bf9b7a',  # Warm tan
-    '#d17f5e',  # Warm coral
-    '#c44536',  # Burnt orange red
-    '#8b1e3f',  # Deep burgundy
-    '#472d54',  # Deep purple
-    '#855988',  # Muted mauve
-    '#2d5447',  # Forest green
-    '#507e6d'  # Sage green
-]
-
-wilc = pd.read_csv('assets/results/wilcoxon.csv')
-wilc['method'] = wilc['method'].map(lambda x: COLUMN_MAP.get(x, x))
-wilc = wilc.drop(columns=['mean_mase'])
-wilc = wilc.rename(columns={'dataset': 'ds'})
-
-wilc_binary = pd.pivot(wilc, columns='method', index=['model', 'ds']) < 0.05
-wilc_binary.columns = [x[1] for x in wilc_binary.columns]
-
-df = df.rename(columns=COLUMN_MAP)
-df = df[['Original', 'Grasynda', 'Grasynda(E)', 'DBA',
-         'Jitter', 'M-Warp', 'MBB', 'Scaling', 'T-Warp', 'TSMixup',
-         'SNaive', 'ds', 'model']]
 
 # overall details on table
-perf_by_all = df.groupby(['model', 'ds']).mean(numeric_only=True)
-og = perf_by_all['Original']
-effectiveness = perf_by_all.apply(lambda x: (x < og).astype(int), axis=0).mean()
+perf_by_ds = df.groupby(['Dataset']).mean(numeric_only=True)
 perf_by_all_ext = add_model_averages_and_ranks(df=perf_by_all).sort_index(level=['model'], ascending=[False])
 
 avg_perf = perf_by_all.reset_index().groupby('model').mean(numeric_only=True)
