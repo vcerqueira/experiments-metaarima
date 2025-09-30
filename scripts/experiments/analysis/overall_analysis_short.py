@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import plotnine as p9
 
-from src.meta.arima._data_reader import MetadataReader
+from src.utils import read_results
 
 DATASET_PAIRS = [
     ('M3', 'Quarterly'),
@@ -15,29 +15,7 @@ DATASET_PAIRS = [
     ('M4', 'Quarterly')
 ]
 
-RESULTS_DIR = 'assets/results/main'
-all_results = []
-
-for data_name, group in DATASET_PAIRS:
-    print(data_name, group)
-
-    freq_int = 12 if group == 'Monthly' else 4
-
-    mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
-
-    results_df_ = pd.read_csv(f'{RESULTS_DIR}/{data_name},{group}.csv')
-    results_df_['Dataset'] = f'{data_name}-{group[0]}'
-
-    # X, y, _, _, cv = mdr.read(fill_na_value=-1)
-    # df = X.merge(results_df, on='unique_id')
-    # df['ETS_delta'] = (df['AutoETS'] - df['MetaARIMA'] < -0.04).astype(int)
-    # df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.04).astype(int)
-    # df['SN_delta'] = (df['SeasonalNaive'] - df['MetaARIMA'])
-
-    all_results.append(results_df_)
-
-results_df = pd.concat(all_results, ignore_index=True)
-results_df = results_df.drop(columns='unique_id')
+results_df = read_results()
 
 print(results_df.drop(columns='Dataset').mean(numeric_only=True))
 print(results_df.drop(columns='Dataset').median(numeric_only=True))

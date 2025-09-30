@@ -1,17 +1,34 @@
 import os
 import re
+from pprint import pprint
+
+import numpy as np
+import plotnine as p9
+
+from src.meta.arima._data_reader import MetadataReader
 
 import pandas as pd
 import plotnine as p9
 
+RESULTS_DIR = 'assets/results/main'
+
 DS_MAPPER = {
-    'Gluonts-m1_monthly': 'M1-M',
-    'Gluonts-m1_quarterly': 'M1-Q',
+    'M4-Monthly': 'M4-M',
+    'M4-Quarterly': 'M4-Q',
     'M3-Monthly': 'M3-M',
     'M3-Quarterly': 'M3-Q',
     'Tourism-Monthly': 'T-M',
     'Tourism-Quarterly': 'T-Q',
 }
+
+DATASET_PAIRS = [
+    ('M3', 'Quarterly'),
+    ('Tourism', 'Monthly'),
+    ('Tourism', 'Quarterly'),
+    ('M3', 'Monthly'),
+    ('M4', 'Monthly'),
+    ('M4', 'Quarterly')
+]
 
 THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
         p9.theme(plot_margin=.025,
@@ -23,6 +40,32 @@ THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
                  axis_text_x=p9.element_text(size=9, angle=0),
                  axis_text_y=p9.element_text(size=9),
                  legend_title=p9.element_blank())
+
+
+def read_results(file_path: str = RESULTS_DIR) -> pd.DataFrame:
+    all_results = []
+    for data_name, group in DATASET_PAIRS:
+        print(data_name, group)
+
+        freq_int = 12 if group == 'Monthly' else 4
+
+        results_df_ = pd.read_csv(f'{file_path}/{data_name},{group}.csv')
+        results_df_['Dataset'] = f'{data_name}-{group[0]}'
+
+        # mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
+        # X, y, _, _, cv = mdr.read(fill_na_value=-1)
+        # print(X)
+        # df = X.merge(results_df, on='unique_id')
+        # df['ETS_delta'] = (df['AutoETS'] - df['MetaARIMA'] < -0.04).astype(int)
+        # df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.04).astype(int)
+        # df['SN_delta'] = (df['SeasonalNaive'] - df['MetaARIMA'])
+
+        all_results.append(results_df_)
+
+    df = pd.concat(all_results, ignore_index=True)
+    df = df.drop(columns='unique_id')
+
+    return df
 
 
 def to_latex_tab(df, round_to_n, rotate_cols: bool):
