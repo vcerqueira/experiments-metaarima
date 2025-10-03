@@ -1,3 +1,9 @@
+"""
+
+3. barplot ou tabela dos resultados das variantes
+
+
+"""
 from pprint import pprint
 
 import pandas as pd
@@ -5,7 +11,7 @@ import plotnine as p9
 
 DATASET_PAIRS = [
     ('M3', 'Monthly'),
-    ('Tourism', 'Monthly'),
+    #('Tourism', 'Monthly'),
 ]
 
 RESULTS_DIR = 'assets/results/sensitivity'

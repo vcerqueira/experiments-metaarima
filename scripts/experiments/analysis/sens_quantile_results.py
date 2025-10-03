@@ -7,7 +7,6 @@ DATASET_PAIRS = [
 ]
 
 RESULTS_DIR = 'assets/results/sensitivity'
-all_results = []
 
 results_df = pd.read_csv(f'{RESULTS_DIR}/quantile,M3,Monthly.csv')
 
