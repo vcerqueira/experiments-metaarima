@@ -1,3 +1,27 @@
+"""
+1. dist boxplot of error across all time series
+    include mean
+
+    mostrar que tem melhores resultados wrt to outros metodos para configurar arima e metodos sota
+    talvez dizer que em media n e tao notorio
+
+
+2. tabela1 com resultados médios por dataset + avg rank
+    tabela2 com resultados médianos por dataset + avg rank
+
+
+sens analysis
+3. barplot ou tabela dos resultados das variantes
+
+4. lineplot com resultados das outras sens analysis
+    n trials
+    quantile
+    lambda
+
+5. tabela com resultados por dataset na analise TL
+
+
+"""
 import pandas as pd
 import plotnine as p9
 
@@ -8,6 +32,10 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 df = read_results()
+
+df_mt = df.drop(columns=['Dataset']).melt()
+
+
 
 perf_by_ds = df.groupby(['Dataset']).mean(numeric_only=True)
 
