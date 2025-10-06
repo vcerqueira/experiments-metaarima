@@ -1,67 +1,53 @@
-"""
-1. dist boxplot of error across all time series
-    include mean
+import warnings
 
-    mostrar que tem melhores resultados wrt to outros metodos para configurar arima e metodos sota
-    talvez dizer que em media n e tao notorio
-
-
-2. tabela1 com resultados médios por dataset + avg rank
-    tabela2 com resultados médianos por dataset + avg rank
-
-
-sens analysis
-3. barplot ou tabela dos resultados das variantes
-
-4. lineplot com resultados das outras sens analysis
-    n trials
-    quantile
-    lambda
-
-5. tabela com resultados por dataset na analise TL
-
-
-"""
 import numpy as np
 import pandas as pd
 import plotnine as p9
 
 from src.utils import to_latex_tab, THEME, read_results
 
-import warnings
-
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-df = read_results()
+TRUNCATE_DIST = False
 
+df = read_results()
 df_mt = df.drop(columns=['Dataset']).melt()
 
 avg_score = df_mt.groupby('variable', observed=False)['value'].mean().reset_index()
+sorted_vars = avg_score.sort_values('value', ascending=False)['variable'].tolist()
+df_mt['variable'] = pd.Categorical(df_mt['variable'], categories=sorted_vars, ordered=True)
 
 aes_ = {'x': 1, 'y': 'np.log(value+1)'}
 
 df_mt_blp2 = df_mt.query('value<0.2')
 
-plot = p9.ggplot(df_mt_blp2, p9.aes(**aes_)) + \
-       p9.theme_minimal(base_family='Palatino', base_size=12) + \
+if TRUNCATE_DIST:
+    plot = p9.ggplot(df_mt_blp2, p9.aes(**aes_))
+    plot_name = 'mase_distr_violins_trunc.pdf'
+else:
+    plot = p9.ggplot(df_mt, p9.aes(**aes_))
+    plot_name = 'mase_distr_violins.pdf'
+
+plot = plot + \
+       THEME + \
        p9.theme(plot_margin=0.015,
                 axis_text_y=p9.element_text(size=12),
                 axis_text_x=p9.element_blank(),
-                # axis_line_x=p9.element_blank(),
+                axis_line_x=p9.element_blank(),
+                axis_ticks_x=p9.element_blank(),
                 legend_title=p9.element_blank(),
-                legend_position=None) + \
-       p9.facet_grid(f'. ~variable') + \
-       p9.geom_violin(  # fill='#58a63e',
-           # color='variable',
-           show_legend=False) + \
+                legend_position=None,
+                strip_text=p9.element_text(size=13)) + \
+       p9.facet_grid('. ~variable') + \
+       p9.geom_violin(show_legend=False) + \
        p9.geom_hline(data=avg_score,
                      mapping=p9.aes(yintercept='value'),
-                     colour='red',
-                     size=1) + \
+                     colour='orangered',
+                     size=1.3) + \
        p9.xlab('') + \
        p9.ylab('MASE')
 
-plot.save('img.pdf', width=12, height=5)
+plot.save(plot_name, width=12, height=5)
 
 avg_by_ds = df.groupby(['Dataset']).mean(numeric_only=True).round(4)
 avg_by_ds.loc['Avg.', :] = avg_by_ds.mean().values
