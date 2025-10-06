@@ -79,6 +79,22 @@ for i, uid in enumerate(test_uids):
 
 metaarima_time = time.time() - metaarima_start
 
+metaarima_start = time.time()
+df_uids = train.query(f'unique_id==@test_uids').copy()
+feat_df = tsfeatures(df_uids, freq=freq_int).set_index('unique_id')
+uid_configs = meta_arima.meta_predict(feat_df.fillna(-1))
+
+for i, uid in enumerate(test_uids):
+    print(i, uid)
+
+    df_uid = train.query(f'unique_id=="{uid}"').copy()
+
+    meta_arima.fit(df_uid, config_space=uid_configs[i])
+
+    fcst = meta_arima.model.sf.predict(h=horizon)
+
+metaarima_time = time.time() - metaarima_start
+
 autoarima_start = time.time()
 for i, uid in enumerate(test_uids):
     print(i, uid)
