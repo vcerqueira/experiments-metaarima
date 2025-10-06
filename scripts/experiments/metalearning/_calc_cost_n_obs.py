@@ -1,10 +1,7 @@
-from pprint import pprint
-
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.multioutput import ClassifierChain
-from lightgbm import LGBMClassifier
+from xgboost import XGBRFRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
@@ -12,11 +9,6 @@ from src.load_data.config import DATASETS
 from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 
 data_name, group = 'M3', 'Monthly'
-# data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
-# data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Weekly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
@@ -43,27 +35,22 @@ y_train = y.iloc[train_index, :]
 X_test = X.iloc[test_index, :]
 y_test = y.iloc[test_index, :]
 
-mod = ClassifierChain(LGBMClassifier(verbosity=-1))
-
-meta_arima = MetaARIMA(model=mod,
+meta_arima = MetaARIMA(model=XGBRFRegressor(),
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
-                       target_pca=False,
                        quantile_thr=QUANTILE_THR,
                        use_mmr=MMR,
                        base_optim=BASE_OPTIM,
                        mmr_lambda=LAMBDA)
 
 meta_arima.meta_fit(X_train, y_train)
-pred_list = meta_arima.meta_predict(X_test)
+pred_list = meta_arima.meta_predict(X_test.head(2))
 
 i = 0
 uid = X_test.index[0]
-x = X_test.iloc[0]
-print(i, uid)
-
 n_periods = 1000
+
 start_date = pd.Timestamp('2000-01-01') + pd.DateOffset(months=np.random.randint(0, 120))
 date_range = pd.date_range(end=start_date, periods=n_periods, freq='ME')
 df_uid = pd.DataFrame({
@@ -75,8 +62,6 @@ df_uid = pd.DataFrame({
 meta_arima.fit(df_uid, config_space=pred_list[i])
 meta_arima.model.tot_nobs
 
-1000 * len(pred_list[i])
-1000 * 94
-
-# 2736
+# 3492
 # 36*len(pred_list[i]) + 72*(len(pred_list[i])/2) + 144*(len(pred_list[i])/4) + 288*(len(pred_list[i])/8)
+# 1000 * 94

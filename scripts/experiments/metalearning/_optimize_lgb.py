@@ -1,3 +1,6 @@
+"""
+DEPRECATED... pca + RF mo regression is used
+"""
 from lightgbm import LGBMClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from scipy.stats import randint, uniform

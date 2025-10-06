@@ -1,3 +1,9 @@
+"""
+DEPRECATED CLASSIFICATION
+
+RF makes sense as a natural MO algo
+"""
+
 from pprint import pprint
 
 import pandas as pd
