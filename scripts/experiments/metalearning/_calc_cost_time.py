@@ -1,11 +1,15 @@
+import multiprocessing
+import time
+
+multiprocessing.set_start_method('fork', force=True)
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
 from xgboost import XGBRFRegressor
 from tsfeatures import tsfeatures
-import multiprocessing
-
-multiprocessing.set_start_method('fork', force=True)
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
@@ -39,6 +43,7 @@ y_train = y.iloc[train_index, :]
 X_test = X.iloc[test_index, :]
 y_test = y.iloc[test_index, :]
 
+metaarima_fit_start = time.time()
 meta_arima = MetaARIMA(model=XGBRFRegressor(),
                        freq=freq_str,
                        season_length=freq_int,
@@ -49,10 +54,11 @@ meta_arima = MetaARIMA(model=XGBRFRegressor(),
                        mmr_lambda=LAMBDA)
 
 meta_arima.meta_fit(X_train, y_train)
+metaarima_fit_time = time.time() - metaarima_fit_start
 
 test_uids = X_test.index.tolist()
 
-
+metaarima_start = time.time()
 for i, uid in enumerate(test_uids):
     print(i, uid)
 
@@ -64,9 +70,26 @@ for i, uid in enumerate(test_uids):
 
     meta_arima.fit(df_uid, config_space=uid_configs)
 
-    fcst = meta_arima.model.sf.predict(h=12)
+    fcst = meta_arima.model.sf.predict(h=horizon)
 
     # try:
     #     meta_arima.fit(df_uid, config_space=uid_configs)
     # except ValueError:
     #     continue
+
+metaarima_time = time.time() - metaarima_start
+
+autoarima_start = time.time()
+for i, uid in enumerate(test_uids):
+    print(i, uid)
+
+    df_uid = train.query(f'unique_id=="{uid}"').copy()
+
+    sf_auto = StatsForecast(models=[AutoARIMA()], freq=freq_str)
+    sf_auto.fit(df=df_uid)
+    fcst_auto = sf_auto.predict(h=horizon)
+autoarima_time = time.time() - autoarima_start
+
+print(f"\nMetaARIMA time: {metaarima_time:.2f}s")
+print(f"\nMetaARIMA fit time: {metaarima_fit_time:.2f}s")
+print(f"AutoARIMA time: {autoarima_time:.2f}s")
