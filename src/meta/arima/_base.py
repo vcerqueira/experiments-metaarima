@@ -96,7 +96,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
             List of tuples (model_index, aicc_score)
         """
         df_subset = df.tail(sample_size).copy()
-        print(df_subset.shape[0])
+        # print(df_subset.shape[0])
 
         models_subset = [self.models[i] for i in model_indices]
         sf_subset = StatsForecast(models=models_subset, freq=self.freq)
