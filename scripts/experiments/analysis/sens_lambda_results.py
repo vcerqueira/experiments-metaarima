@@ -1,39 +1,40 @@
-"""
-
-4. lineplot com resultados das outras sens analysis
-    n trials
-    quantile
-    lambda
-
-
-
-"""
-
 import pandas as pd
 import plotnine as p9
 
-DATASET_PAIRS = [
-    ('M3', 'Monthly'),
-    #('Tourism', 'Monthly'),
-]
+from src.utils import THEME
 
-RESULTS_DIR = 'assets/results/sensitivity'
+PLOT_NAME = 'assets/results/plots/lambda_scores.pdf'
 
-results_df = pd.read_csv(f'{RESULTS_DIR}/lambda,M3,Monthly.csv')
+results_df = pd.read_csv('assets/results/sensitivity/lambda,M3,Monthly.csv')
 
-print(results_df.mean(numeric_only=True))
-print(results_df.median(numeric_only=True))
-print(results_df.rank(axis=1, na_option='bottom').mean())
+avg_scores = results_df.median(numeric_only=True)
 
-s = results_df.median(numeric_only=True)
+meta_arima_mask = avg_scores.index.str.contains('MetaARIMA')
+df_meta = pd.DataFrame({
+    'lambda': avg_scores.index[meta_arima_mask].str.extract(r'\((.*?)\)')[0].astype(float),
+    'SMAPE': avg_scores[meta_arima_mask].values
+})
+df_meta['lambda'] = df_meta['lambda'].astype(float)  # Remove categorical to allow line plot
 
-df = s.reset_index()
-df.columns = ['Method', 'AverageRank']
+auto_arima_scr = pd.Series({'AutoARIMA': avg_scores[avg_scores.index == 'AutoARIMA'].iloc[0]})
+auto_arima_scr = auto_arima_scr.reset_index()
+auto_arima_scr.columns = ['AutoARIMA', 'value']
 
-p = p9.ggplot(df, p9.aes(x='reorder(Method, AverageRank)', y='AverageRank')) + \
-    p9.geom_bar(stat='identity', fill='#4C72B0') + \
-    p9.theme_minimal() + \
-    p9.theme(axis_text=p9.element_text(size=12)) + \
-    p9.labs(x='', y='SMAPE', title='')
+plot = p9.ggplot(df_meta, p9.aes(**{'x': 'lambda', 'y': 'SMAPE'})) + \
+       THEME + \
+       p9.theme(plot_margin=0.015,
+                axis_text_y=p9.element_text(size=12),
+                axis_text_x=p9.element_text(size=12),
+                legend_title=p9.element_blank(),
+                legend_position=None,
+                strip_text=p9.element_text(size=13)) + \
+       p9.geom_point() + \
+       p9.geom_line(group=1) + \
+       p9.geom_hline(data=auto_arima_scr,
+                     mapping=p9.aes(yintercept='value'),
+                     colour='orangered',
+                     size=1.3) + \
+       p9.xlab('λ') + \
+       p9.ylab('SMAPE')
 
-p.save('avg_smape.pdf', width=12, height=4.5)
+plot.save(PLOT_NAME, width=12, height=3.5)

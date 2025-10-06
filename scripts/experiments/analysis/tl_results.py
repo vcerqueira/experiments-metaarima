@@ -3,18 +3,25 @@ from pprint import pprint
 import pandas as pd
 import plotnine as p9
 
-DATASET_PAIRS = [
-    ('M3', 'Monthly'),
-    ('M3', 'Quarterly'),
-    ('Tourism', 'Monthly'),
-    ('Tourism', 'Quarterly'),
-    ('M4', 'Quarterly')
-]
+from src.utils import THEME
 
-RESULTS_DIR = 'assets/results/sensitivity'
+PLOT_NAME = 'assets/results/plots/transfer_scores.pdf'
 
-results_df = pd.read_csv(f'{RESULTS_DIR}/transfer,M4,Monthly.csv')
+results_df = pd.read_csv('assets/results/sensitivity/transfer,M4,Monthly.csv')
+results_df = results_df.drop(columns=['AutoARIMA2', 'ARIMA(2,1,2)(1,0,0)'])
 
-print(results_df.mean(numeric_only=True))
-print(results_df.median(numeric_only=True))
-print(results_df.rank(axis=1, na_option='bottom').mean())
+avg_scores = results_df.median(numeric_only=True).reset_index()
+avg_scores.columns = ['variable', 'SMAPE']
+
+plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'variable', 'y': 'SMAPE'})) + \
+       THEME + \
+       p9.theme(plot_margin=0.015,
+                axis_text_y=p9.element_text(size=12),
+                axis_text_x=p9.element_text(size=12, angle=30),
+                legend_title=p9.element_blank(),
+                legend_position=None,
+                strip_text=p9.element_text(size=13)) + \
+       p9.geom_bar(stat='identity', fill='teal') + \
+       p9.labs(x='')
+
+plot.save(PLOT_NAME, width=11, height=4.5)

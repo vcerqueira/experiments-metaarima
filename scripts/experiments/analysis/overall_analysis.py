@@ -8,7 +8,7 @@ from src.utils import to_latex_tab, THEME, read_results
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-TRUNCATE_DIST = True
+TRUNCATE_DIST = False
 
 df = read_results()
 df_mt = df.drop(columns=['Dataset']).melt()
@@ -17,7 +17,8 @@ avg_score = df_mt.groupby('variable', observed=False)['value'].mean().reset_inde
 sorted_vars = avg_score.sort_values('value', ascending=False)['variable'].tolist()
 df_mt['variable'] = pd.Categorical(df_mt['variable'], categories=sorted_vars, ordered=True)
 
-aes_ = {'x': 1, 'y': 'np.log(value+1)'}
+# aes_ = {'x': 1, 'y': 'np.log(value+1)'}
+aes_ = {'x': 1, 'y': 'value'}
 
 df_mt_blp2 = df_mt.query('value<0.2')
 

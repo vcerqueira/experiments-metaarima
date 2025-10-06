@@ -5,35 +5,41 @@ from src.utils import THEME
 
 PLOT_NAME = 'assets/results/plots/ablation_scores.pdf'
 
-results_df = pd.read_csv('assets/results/sensitivity/lambda,M3,Monthly.csv')
+results_df = pd.read_csv('assets/results/sensitivity/ablation,M3,Monthly.csv')
+results_df.columns = [
+    'MetaARIMA',
+    'No PCA',
+    'Regr. Chain',
+    'Error Regr.',
+    'No SH',
+    'Monte Carlo',
+    'Multi-output Regr.',
+    'No MMR',
+]
 
-print(results_df.mean(numeric_only=True))
-print(results_df.median(numeric_only=True))
-print(results_df.rank(axis=1, na_option='bottom').mean())
+avg_scores = results_df.mean(numeric_only=True).reset_index()
+avg_scores.columns = ['Variant', 'SMAPE']
+avg_scores['Variant'] = pd.Categorical(avg_scores['Variant'],
+                                       categories=[
+                                           'MetaARIMA',
+                                           'No PCA',
+                                           'No MMR',
+                                           'No SH',
+                                           'Monte Carlo',
+                                           'Regr. Chain',
+                                           'Multi-output Regr.',
+                                           'Error Regr.',
+                                       ])
 
-avg_scores = results_df.median(numeric_only=True)
+plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'Variant', 'y': 'SMAPE'})) + \
+       THEME + \
+       p9.theme(plot_margin=0.015,
+                axis_text_y=p9.element_text(size=12),
+                axis_text_x=p9.element_text(size=12, angle=30),
+                legend_title=p9.element_blank(),
+                legend_position=None,
+                strip_text=p9.element_text(size=13)) + \
+       p9.geom_bar(stat='identity', fill='teal') + \
+       p9.labs(x='')
 
-# Extract lambda values and create dataframe for MetaARIMA results
-meta_arima_mask = avg_scores.index.str.contains('MetaARIMA')
-df_meta = pd.DataFrame({
-    'lambda': avg_scores.index[meta_arima_mask].str.extract(r'\((.*?)\)')[0].astype(float),
-    'SMAPE': avg_scores[meta_arima_mask].values
-})
-
-# Get AutoARIMA score for horizontal line
-auto_arima_score = avg_scores[avg_scores.index == 'AutoARIMA'].iloc[0]
-
-# Create line plot dataframe
-df = df_meta.sort_values('lambda')
-
-# Add AutoARIMA reference line dataframe
-df_ref = pd.DataFrame({'SMAPE': [auto_arima_score]})
-
-p = p9.ggplot(df, p9.aes(x='reorder(Method, SMAPE)', y='SMAPE')) + \
-    THEME + \
-    p9.geom_bar(stat='identity', fill='#4C72B0') + \
-    p9.theme_minimal() + \
-    p9.theme(axis_text=p9.element_text(size=12)) + \
-    p9.labs(x='', y='SMAPE', title='')
-
-p.save(PLOT_NAME, width=12, height=4.5)
+plot.save(PLOT_NAME, width=11, height=4.5)
