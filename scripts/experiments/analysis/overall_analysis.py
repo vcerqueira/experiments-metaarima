@@ -8,7 +8,7 @@ from src.utils import to_latex_tab, THEME, read_results
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-TRUNCATE_DIST = False
+TRUNCATE_DIST = True
 
 df = read_results()
 df_mt = df.drop(columns=['Dataset']).melt()
@@ -23,10 +23,10 @@ df_mt_blp2 = df_mt.query('value<0.2')
 
 if TRUNCATE_DIST:
     plot = p9.ggplot(df_mt_blp2, p9.aes(**aes_))
-    plot_name = 'mase_distr_violins_trunc.pdf'
+    plot_name = 'assets/results/plots/smape_distr_violins_trunc.pdf'
 else:
     plot = p9.ggplot(df_mt, p9.aes(**aes_))
-    plot_name = 'mase_distr_violins.pdf'
+    plot_name = 'assets/results/plots/smape_distr_violins.pdf'
 
 plot = plot + \
        THEME + \
@@ -45,7 +45,7 @@ plot = plot + \
                      colour='orangered',
                      size=1.3) + \
        p9.xlab('') + \
-       p9.ylab('MASE')
+       p9.ylab('SMAPE')
 
 plot.save(plot_name, width=12, height=5)
 
