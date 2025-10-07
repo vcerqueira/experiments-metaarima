@@ -68,14 +68,11 @@ for i, uid in enumerate(test_uids):
 
     uid_configs = meta_arima.meta_predict(feat_df.fillna(-1))[0]
 
-    meta_arima.fit(df_uid, config_space=uid_configs)
+    meta_arima.fit(df_uid, config_space=uid_configs, version="1")
+    meta_arima.fit(df_uid, config_space=uid_configs, version="2")
 
     fcst = meta_arima.model.sf.predict(h=horizon)
-
-    # try:
-    #     meta_arima.fit(df_uid, config_space=uid_configs)
-    # except ValueError:
-    #     continue
+    fcst2 = meta_arima.model.sf.predict(h=horizon)
 
 metaarima_time = time.time() - metaarima_start
 
