@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 from sklearn.model_selection import KFold
 from xgboost import XGBRFRegressor
 
@@ -43,19 +45,23 @@ meta_arima = MetaARIMA(model=XGBRFRegressor(),
                        mmr_lambda=LAMBDA)
 
 meta_arima.meta_fit(X_train, y_train)
+pred_list = meta_arima.meta_predict(X_test.head(2))
 
-pred_list = meta_arima.meta_predict(X_test)
+i = 0
+uid = X_test.index[0]
+n_periods = 1000
 
-tot_obs_metaarima, tot_obs_autoarima = 0, 0
-for i, uid in enumerate(X_test.index):
-    print(i, uid)
-    if i > 30:
-        break
+start_date = pd.Timestamp('2000-01-01') + pd.DateOffset(months=np.random.randint(0, 120))
+date_range = pd.date_range(end=start_date, periods=n_periods, freq='ME')
+df_uid = pd.DataFrame({
+    'unique_id': [uid] * n_periods,
+    'ds': date_range,
+    'y': np.random.randn(n_periods)
+})
 
-    df_uid = train.query(f'unique_id=="{uid}"').copy()
-    # default is 94 models
-    tot_obs_autoarima += df_uid.shape[0] * 94
+meta_arima.fit(df_uid, config_space=pred_list[i])
+meta_arima.model.tot_nobs
 
-    meta_arima.fit(df_uid, config_space=pred_list[i])
-
-    tot_obs_metaarima += meta_arima.model.tot_nobs
+# 3492
+# 36*len(pred_list[i]) + 72*(len(pred_list[i])/2) + 144*(len(pred_list[i])/4) + 288*(len(pred_list[i])/8)
+# 1000 * 94

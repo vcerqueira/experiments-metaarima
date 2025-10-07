@@ -9,7 +9,6 @@ from src.meta.arima.multilabel_pca import MultiLabelPCARegressor
 from src.meta.arima._base import (MetaARIMAUtils,
                                   _MetaARIMABase,
                                   _HalvingMetaARIMABase,
-                                  _HalvingMetaARIMABase2,
                                   _MetaARIMABaseMC)
 
 warnings.filterwarnings(action='ignore')
@@ -77,24 +76,19 @@ class MetaARIMA:
     def meta_predict(self, X):
         assert self.is_fit
 
-        print('inference start')
         if self.meta_regression:
             meta_preds = self.meta_model.predict(X)
         else:
             meta_preds = self.meta_model.predict_proba(X)
-        print('inference end')
 
-        print('posp1 start')
         if isinstance(meta_preds, list):
             meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
-        print('posp2 end')
 
         if self.meta_regression:
             min_vals = meta_preds.min(axis=1, keepdims=True)
             max_vals = meta_preds.max(axis=1, keepdims=True)
             meta_preds = 1 - (meta_preds - min_vals) / (max_vals - min_vals)
 
-        print('mmr start')
         if self.use_mmr:
             meta_preds = [pd.Series(x, index=self.model_names) for x in meta_preds]
 
@@ -110,11 +104,10 @@ class MetaARIMA:
 
             meta_preds_list = preds.apply(lambda x: x.sort_values().index[:self.n_trials].tolist(),
                                           axis=1).values.tolist()
-        print('mmr end')
 
         return meta_preds_list
 
-    def fit(self, df: pd.DataFrame, config_space: List[str], version="1"):
+    def fit(self, df: pd.DataFrame, config_space: List[str]):
         assert self.is_fit
 
         base_params = {'config_space': config_space,
@@ -128,12 +121,7 @@ class MetaARIMA:
             self.model = _MetaARIMABaseMC(**base_params, n_trials=10, trial_n_obs=0.4)
         elif self.base_optim == 'halving':
             # todo hardcoded params2...
-            if version == "1":
-                print("old")
-                self.model = _HalvingMetaARIMABase(**base_params, eta=2, init_resource_factor=4, resource_factor=2)
-            else:
-                print("new")
-                self.model = _HalvingMetaARIMABase2(**base_params, eta=2, init_resource_factor=4, resource_factor=2)
+            self.model = _HalvingMetaARIMABase(**base_params, eta=2, init_resource_factor=4, resource_factor=2)
         else:
             raise ValueError(f'Unknown base optimizer: {self.base_optim}')
 
