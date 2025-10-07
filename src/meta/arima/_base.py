@@ -144,6 +144,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
         best_idx = remaining_indices[0]
         self.sf = StatsForecast(models=[self.models[best_idx]], freq=self.freq)
         self.sf.fit(df=df)
+        self.tot_nobs += df.shape[0]
         self.sf.fitted_[0][0].alias = self.alias
 
 

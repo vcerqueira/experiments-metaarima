@@ -22,40 +22,45 @@ X, y, _, _, cv = mdr.read(fill_na_value=-1)
 # partition is done at time series level, not in time dimension
 kfcv = KFold(n_splits=5, random_state=1, shuffle=True)
 
-results = []
-j, (train_index, test_index) = next(enumerate(kfcv.split(X)))
-print(f"Fold {j}:")
-print(f"  Train: index={train_index}")
-print(f"  Test:  index={test_index}")
-
-X_train = X.iloc[train_index, :]
-y_train = y.iloc[train_index, :]
-X_test = X.iloc[test_index, :]
-y_test = y.iloc[test_index, :]
-
-meta_arima = MetaARIMA(model=XGBRFRegressor(),
-                       freq=freq_str,
-                       season_length=freq_int,
-                       n_trials=N_TRIALS,
-                       quantile_thr=QUANTILE_THR,
-                       use_mmr=MMR,
-                       base_optim=BASE_OPTIM,
-                       mmr_lambda=LAMBDA)
-
-meta_arima.meta_fit(X_train, y_train)
-
-pred_list = meta_arima.meta_predict(X_test)
-
 tot_obs_metaarima, tot_obs_autoarima = 0, 0
-for i, uid in enumerate(X_test.index):
-    print(i, uid)
-    if i > 30:
-        break
+# j, (train_index, test_index) = next(enumerate(kfcv.split(X)))
+for j, (train_index, test_index) in enumerate(kfcv.split(X)):
+    print(f"Fold {j}:")
+    print(f"  Train: index={train_index}")
+    print(f"  Test:  index={test_index}")
 
-    df_uid = train.query(f'unique_id=="{uid}"').copy()
-    # default is 94 models
-    tot_obs_autoarima += df_uid.shape[0] * 94
+    X_train = X.iloc[train_index, :]
+    y_train = y.iloc[train_index, :]
+    X_test = X.iloc[test_index, :]
+    y_test = y.iloc[test_index, :]
 
-    meta_arima.fit(df_uid, config_space=pred_list[i])
+    meta_arima = MetaARIMA(model=XGBRFRegressor(),
+                           freq=freq_str,
+                           season_length=freq_int,
+                           n_trials=N_TRIALS,
+                           quantile_thr=QUANTILE_THR,
+                           use_mmr=MMR,
+                           base_optim=BASE_OPTIM,
+                           mmr_lambda=LAMBDA)
 
-    tot_obs_metaarima += meta_arima.model.tot_nobs
+    meta_arima.meta_fit(X_train, y_train)
+
+    pred_list = meta_arima.meta_predict(X_test)
+
+    for i, uid in enumerate(X_test.index):
+        print(i, uid)
+        # if i > 3:
+        #     break
+
+        df_uid = train.query(f'unique_id=="{uid}"').copy()
+        # default is 94 models
+        print('shape:', df_uid.shape[0])
+        tot_obs_autoarima += df_uid.shape[0] * 94
+
+        meta_arima.fit(df_uid, config_space=pred_list[i])
+        print('n obs:', meta_arima.model.tot_nobs)
+
+        tot_obs_metaarima += meta_arima.model.tot_nobs
+
+print('metaarima tot:', tot_obs_metaarima)
+print('autoarima tot:', tot_obs_autoarima)

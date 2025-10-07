@@ -60,8 +60,7 @@ df_uid = pd.DataFrame({
 })
 
 meta_arima.fit(df_uid, config_space=pred_list[i])
-meta_arima.model.tot_nobs
+print(meta_arima.model.tot_nobs)
 
-# 3492
-# 36*len(pred_list[i]) + 72*(len(pred_list[i])/2) + 144*(len(pred_list[i])/4) + 288*(len(pred_list[i])/8)
+# 5656
 # 1000 * 94
