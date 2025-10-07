@@ -46,27 +46,28 @@ THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
                  legend_title=p9.element_blank())
 
 
-def read_results(file_path: str = RESULTS_DIR) -> pd.DataFrame:
+def read_results(file_path: str = RESULTS_DIR, read_len: bool = False) -> pd.DataFrame:
     all_results = []
     for data_name, group in DATASET_PAIRS:
         print(data_name, group)
+        # if read_len:
+        #     if group == 'Quarterly':
+        #         continue
 
         results_df_ = pd.read_csv(f'{file_path}/{data_name},{group}.csv')
         results_df_['Dataset'] = f'{data_name}-{group[0]}' if data_name != 'Tourism' else f'T-{group[0]}'
 
-        # freq_int = 12 if group == 'Monthly' else 4
-        # mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
-        # X, y, _, _, cv = mdr.read(fill_na_value=-1)
-        # print(X)
-        # df = X.merge(results_df, on='unique_id')
-        # df['ETS_delta'] = (df['AutoETS'] - df['MetaARIMA'] < -0.04).astype(int)
-        # df['ARIMA_delta'] = (df['ARIMA(2,1,2)(1,0,0)'] - df['MetaARIMA'] < -0.04).astype(int)
-        # df['SN_delta'] = (df['SeasonalNaive'] - df['MetaARIMA'])
+        if read_len:
+            freq_int = 12 if group == 'Monthly' else 4
+
+            mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
+            X, y, _, _, cv = mdr.read(fill_na_value=-1)
+            results_df_ = X.reset_index()[['unique_id', 'series_length']].merge(results_df_, on='unique_id')
 
         all_results.append(results_df_)
 
     df = pd.concat(all_results, ignore_index=True)
-    df = df.drop(columns=['unique_id','AutoARIMA2','ARIMA(2,1,2)(1,0,0)'])
+    df = df.drop(columns=['unique_id', 'AutoARIMA2', 'ARIMA(2,1,2)(1,0,0)'])
 
     return df
 
