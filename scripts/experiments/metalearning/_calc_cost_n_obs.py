@@ -61,6 +61,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         print('n obs:', meta_arima.model.tot_nobs)
 
         tot_obs_metaarima += meta_arima.model.tot_nobs
+        tot_obs_metaarima += df_uid.shape[0]  # for the feature extraction step
 
 print('metaarima tot:', tot_obs_metaarima)
 print('autoarima tot:', tot_obs_autoarima)

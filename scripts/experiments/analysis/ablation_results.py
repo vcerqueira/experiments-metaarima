@@ -10,26 +10,33 @@ results_df.columns = [
     'MetaARIMA',
     'No PCA',
     'Regr. Chain',
-    'Error Regr.',
+    'No Binarization',
     'No SH',
     'Monte Carlo',
     'Multi-output Regr.',
     'No MMR',
 ]
 
-avg_scores = results_df.mean(numeric_only=True).reset_index()
+avg_scores = results_df.median(numeric_only=True).reset_index()
 avg_scores.columns = ['Variant', 'SMAPE']
 avg_scores['Variant'] = pd.Categorical(avg_scores['Variant'],
                                        categories=[
                                            'MetaARIMA',
                                            'No PCA',
                                            'No MMR',
+                                           'No Binarization',
                                            'No SH',
                                            'Monte Carlo',
                                            'Regr. Chain',
                                            'Multi-output Regr.',
-                                           'Error Regr.',
                                        ])
+
+latex_df = avg_scores.copy()
+latex_df['SMAPE'] = latex_df['SMAPE'].round(4)
+latex_df = latex_df.set_index('Variant').T
+latex_df.columns = [f'\\rotatebox{{60}}{{{x}}}' for x in latex_df.columns]
+latex_table = latex_df.to_latex(caption='CAPTION', label='tab:ablation_scores')
+print(latex_table)
 
 plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'Variant', 'y': 'SMAPE'})) + \
        THEME + \
