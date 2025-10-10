@@ -90,9 +90,9 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         comp = {
             'MetaARIMA': err_meta,
             'AutoARIMA': err_auto,
-            'AutoARIMA2': err_auto2,  # sanity check
+            # 'AutoARIMA2': err_auto2,  # sanity check
             'ARIMA(2,1,2)': err_arima212,
-            'ARIMA(2,1,2)(1,0,0)': err_arima2121,
+            # 'ARIMA(2,1,2)(1,0,0)': err_arima2121,
             'ARIMA(1,0,0)': err_arima100,
             'SeasonalNaive': err_snaive,
             'AutoTheta': err_theta,
