@@ -25,7 +25,7 @@ class MetaARIMA:
                  meta_regression: bool = False,
                  target_pca: bool = True,
                  base_optim: str = 'halving',
-                 quantile_thr: float = 0.05,
+                 quantile_thr: float = 0.25,
                  mmr_lambda: float = 0.75,
                  use_mmr: bool = True):
 
