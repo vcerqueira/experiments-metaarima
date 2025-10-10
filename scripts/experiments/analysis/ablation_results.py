@@ -13,10 +13,12 @@ avg_scores['Variant'] = pd.Categorical(avg_scores['Variant'],categories=avg_scor
 
 latex_df = avg_scores.copy()
 latex_df['SMAPE'] = latex_df['SMAPE'].round(4).astype(str)
-latex_df = latex_df.set_index('Variant').T
+latex_df = latex_df.set_index('Variant')#.T
+
 latex_df.columns = [f'\\rotatebox{{85}}{{{x}}}' for x in latex_df.columns]
 latex_table = latex_df.to_latex(caption='CAPTION', label='tab:ablation_scores')
 print(latex_table)
+
 
 plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'Variant', 'y': 'SMAPE'})) + \
        THEME + \
