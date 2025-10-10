@@ -65,5 +65,5 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 
 print('metaarima tot:', tot_obs_metaarima)
 print('autoarima tot:', tot_obs_autoarima)
-# metaarima tot: 4696884
+# metaarima tot: 4847310
 # autoarima tot: 14140044

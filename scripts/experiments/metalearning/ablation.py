@@ -16,9 +16,9 @@ from src.config import (N_TRIALS,
                         N_FOLDS,
                         RANDOM_SEED)
 
-data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
+data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
@@ -50,10 +50,6 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     X_test = X.iloc[test_index, :]
     y_test = y.iloc[test_index, :]
 
-    # todo change this after sanity checks
-    X_train = X_train.head(300)
-    y_train = y_train.head(300)
-
     mod = XGBRFRegressor()
     # mod_clf_ch = ClassifierChain(LGBMClassifier(verbosity=-1))
     mod_clf_ch = ClassifierChain(XGBRFClassifier())
@@ -82,14 +78,14 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                                   mmr_lambda=LAMBDA)
 
     meta_arima_ch = MetaARIMA(model=mod_reg_ch,
-                                     freq=freq_str,
-                                     season_length=freq_int,
-                                     n_trials=N_TRIALS,
-                                     target_pca=True,
-                                     quantile_thr=QUANTILE_THR,
-                                     use_mmr=True,
-                                     base_optim=BASE_OPTIM,
-                                     mmr_lambda=LAMBDA)
+                              freq=freq_str,
+                              season_length=freq_int,
+                              n_trials=N_TRIALS,
+                              target_pca=True,
+                              quantile_thr=QUANTILE_THR,
+                              use_mmr=True,
+                              base_optim=BASE_OPTIM,
+                              mmr_lambda=LAMBDA)
 
     meta_arima_regr = MetaARIMA(model=mod,
                                 freq=freq_str,
@@ -190,13 +186,13 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 
             comp = {
                 'MetaARIMA': err_meta,
-                'MetaARIMA(No-PCA)': err_meta_nopca,
-                'MetaARIMA(RC)': err_meta_ch,
-                'MetaARIMA(Reg)': err_meta_regr,
-                'MetaARIMA(No-SH)': err_meta_nosh,
-                'MetaARIMA(MC)': err_meta_mc,
-                'MetaARIMA(MO)': err_meta_mo,
-                'MetaARIMA(No-MMR)': err_meta_nommr,
+                'No-PCA': err_meta_nopca,
+                'No-MMR': err_meta_nommr,
+                'No-Binarization': err_meta_regr,
+                'No-SH': err_meta_nosh,
+                'Monte Carlo': err_meta_mc,
+                'Regr. Chain': err_meta_ch,
+                'Multi-output Regr.': err_meta_mo,
             }
 
             pprint(comp)
