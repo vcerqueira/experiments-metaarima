@@ -28,15 +28,8 @@ train, test = data_loader.train_test_split(df, horizon=horizon)
 models = MetaARIMAUtils.get_models_sf(season_length=freq_int, max_config=ORDER_MAX)
 print(len(models))
 
-# PREV_RESULTS_CSV = ['arima,M4,Monthly_.csv']
-
 if __name__ == '__main__':
     outfile = Path(__file__).parent.parent.parent / 'assets' / 'metadata_cv'
-
-    # result_files = []
-    # for file in PREV_RESULTS_CSV:
-    #     r = pd.read_csv(f'{outfile}/{file}')
-    #     result_files += r['unique_id'].values.tolist()
 
     results = {}
     df_grouped = train.groupby('unique_id')

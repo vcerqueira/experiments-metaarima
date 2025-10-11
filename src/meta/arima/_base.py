@@ -49,8 +49,8 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
                  season_length: int,
                  freq: str,
                  eta: float = 2,
-                 resource_factor: float = 2.5,
-                 init_resource_factor: int = 10,
+                 resource_factor: float = 2,
+                 init_resource_factor: int = 4,
                  min_configs: int = 1):
         """
         Initialize MetaARIMA with successive halving.
