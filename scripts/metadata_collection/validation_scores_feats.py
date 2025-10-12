@@ -11,8 +11,8 @@ from src.meta.arima._base import MetaARIMAUtils
 from src.config import ORDER_MAX
 from src.load_data.config import DATASETS
 
-data_name, group = 'M3', 'Monthly'
-# data_name, group = 'M3', 'Quarterly'
+# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'

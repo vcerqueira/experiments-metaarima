@@ -30,7 +30,7 @@ class MetadataReader:
         self.group = group
         self.freq_int = freq_int
 
-    def read(self, fill_na_value: Optional[float] = -1):
+    def read(self, from_dev_set: bool=False,fill_na_value: Optional[float] = -1):
         """ Read the data from the features and metadata cv files.
         Args:
             fill_na_value: float, value to fill na with
@@ -43,8 +43,12 @@ class MetadataReader:
             model_names: list, model names
             cv: pd.DataFrame, metadata cv
         """
-        feats_path = self.features_dir / f"features,{self.dataset_name},{self.group}.csv"
-        cv_path = self.metadata_cv_dir / f"arima,{self.dataset_name},{self.group}.csv"
+        if from_dev_set:
+            feats_path = self.features_dir / f"features-dev,{self.dataset_name},{self.group}.csv"
+            cv_path = self.metadata_cv_dir / f"arima-dev,{self.dataset_name},{self.group}.csv"
+        else:
+            feats_path = self.features_dir / f"features,{self.dataset_name},{self.group}.csv"
+            cv_path = self.metadata_cv_dir / f"arima,{self.dataset_name},{self.group}.csv"
         
         feats = pd.read_csv(feats_path)
         cv = pd.read_csv(cv_path)

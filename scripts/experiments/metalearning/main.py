@@ -25,7 +25,8 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-X, y, _, _, cv = mdr.read(fill_na_value=-1)
+X, y, _, _, cv = mdr.read(from_dev_set=True, fill_na_value=-1)
+_, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
 print(y.shape)
 print(cv.shape)
 
@@ -66,26 +67,19 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
         except ValueError:
             continue
 
-        auto_arima_config = cv.loc[uid, 'auto_config']
-
-        err_meta = cv.loc[uid, meta_arima.selected_config]
-        err_auto = cv.loc[uid, 'score_AutoARIMA']
-        err_snaive = cv.loc[uid, 'score_SeasNaive']
-        err_theta = cv.loc[uid, 'score_AutoTheta']
-        err_ets = cv.loc[uid, 'score_AutoETS']
+        err_meta = cv_test.loc[uid, meta_arima.selected_config]
+        err_auto = cv_test.loc[uid, 'score_AutoARIMA']
+        err_snaive = cv_test.loc[uid, 'score_SeasNaive']
+        err_theta = cv_test.loc[uid, 'score_AutoTheta']
+        err_ets = cv_test.loc[uid, 'score_AutoETS']
 
         config212 = f'ARIMA(2,1,2)(0,0,0)[{freq_int}]'
-        config2121 = f'ARIMA(2,1,2)(1,0,0)[{freq_int}]'
+        # config2121 = f'ARIMA(2,1,2)(1,0,0)[{freq_int}]'
         config100 = f'ARIMA(1,0,0)(0,0,0)[{freq_int}]'
 
-        err_arima212 = cv.loc[uid, config212]
-        err_arima2121 = cv.loc[uid, config2121]
-        err_arima100 = cv.loc[uid, config100]
-
-        try:
-            err_auto2 = cv.loc[uid, auto_arima_config]
-        except KeyError:
-            err_auto2 = np.nan
+        err_arima212 = cv_test.loc[uid, config212]
+        # err_arima2121 = cv_test.loc[uid, config2121]
+        err_arima100 = cv_test.loc[uid, config100]
 
         comp = {
             'MetaARIMA': err_meta,
