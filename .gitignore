@@ -174,3 +174,5 @@ experiments_extra/
 extra
 modelradar/
 scripts/experiments/_dev/
+assets/metadata_cv/arima-dev,M4,Quarterly.csv
+assets/metadata_cv/arima-dev,M4,Monthly.csv
