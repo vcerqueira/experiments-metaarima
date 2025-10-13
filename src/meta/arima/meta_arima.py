@@ -24,6 +24,7 @@ class MetaARIMA:
                  n_trials: int,
                  meta_regression: bool = False,
                  target_pca: bool = True,
+                 pca_n_components: int = 100,
                  base_optim: str = 'halving',
                  quantile_thr: float = 0.25,
                  mmr_lambda: float = 0.75,
@@ -38,13 +39,14 @@ class MetaARIMA:
         self.corr_mat = None
         self.corr_mat_values = None
         self.target_pca = target_pca
+        self.pca_n_components = pca_n_components
         self.use_mmr = use_mmr
         self.mmr_lambda = mmr_lambda
         self.base_optim = base_optim
         self.meta_regression = meta_regression
         self.selected_config = ''
         if self.target_pca:
-            self.meta_model = copy.deepcopy(MultiLabelPCARegressor(mod=model))
+            self.meta_model = copy.deepcopy(MultiLabelPCARegressor(mod=model, n_components=self.pca_n_components))
         else:
             self.meta_model = copy.deepcopy(model)
 

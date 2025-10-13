@@ -18,7 +18,7 @@ class MultiLabelPCARegressor(BaseEstimator, MultiOutputMixin):
     3. Reconstruction back to original label space
     """
 
-    def __init__(self, mod, n_components=50, random_state=42):
+    def __init__(self, mod, n_components=100, random_state=1):
         self.n_components = n_components
         self.random_state = random_state
 

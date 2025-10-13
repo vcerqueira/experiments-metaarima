@@ -14,7 +14,8 @@ from src.config import (N_TRIALS,
                         BASE_OPTIM,
                         LAMBDA,
                         N_FOLDS,
-                        RANDOM_SEED)
+                        RANDOM_SEED,
+                        PCA_N_COMPONENTS)
 
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'

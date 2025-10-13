@@ -8,11 +8,11 @@ from xgboost import XGBRFRegressor
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
-from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA, N_FOLDS, RANDOM_SEED
+from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA, N_FOLDS, RANDOM_SEED, PCA_N_COMPONENTS
 
-data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
+data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Quarterly'
@@ -50,6 +50,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                            season_length=freq_int,
                            n_trials=N_TRIALS,
                            quantile_thr=QUANTILE_THR,
+                           pca_n_components=PCA_N_COMPONENTS,
                            use_mmr=MMR,
                            base_optim=BASE_OPTIM,
                            mmr_lambda=LAMBDA)

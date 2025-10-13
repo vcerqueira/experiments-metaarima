@@ -12,11 +12,11 @@ from src.config import ORDER_MAX
 from src.load_data.config import DATASETS
 
 # data_name, group = 'M3', 'Monthly'
-data_name, group = 'M3', 'Quarterly'
+# data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Quarterly'
+data_name, group = 'M4', 'Quarterly'
 print(data_name, group)
 data_loader = DATASETS[data_name]
 
@@ -43,8 +43,7 @@ if __name__ == '__main__':
     for uid, uid_df in df_grouped:
 
         print(data_name, group, uid)
-        # if uid in result_files:
-        #     continue
+
         sf = StatsForecast(models=models, freq=freq_str)
         try:
             sf.fit(df=uid_df)
