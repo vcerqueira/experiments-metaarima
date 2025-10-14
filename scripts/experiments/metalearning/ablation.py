@@ -17,9 +17,9 @@ from src.config import (N_TRIALS,
                         RANDOM_SEED,
                         PCA_N_COMPONENTS)
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Weekly'
@@ -32,7 +32,8 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-X, y, _, _, cv = mdr.read(fill_na_value=-1)
+X_dev, y_dev, _, _, cv = mdr.read(from_dev_set=True, fill_na_value=-1)
+X, y, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
 print(y.shape)
 print(cv.shape)
 
@@ -46,10 +47,10 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     print(f"  Train: index={train_index}")
     print(f"  Test:  index={test_index}")
 
-    X_train = X.iloc[train_index, :]
-    y_train = y.iloc[train_index, :]
+    X_train = X_dev.iloc[train_index, :]
+    y_train = y_dev.iloc[train_index, :]
     X_test = X.iloc[test_index, :]
-    y_test = y.iloc[test_index, :]
+    # y_test = y.iloc[test_index, :]
 
     mod = XGBRFRegressor()
     # mod_clf_ch = ClassifierChain(LGBMClassifier(verbosity=-1))
@@ -63,6 +64,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                            freq=freq_str,
                            season_length=freq_int,
                            n_trials=N_TRIALS,
+                           pca_n_components=PCA_N_COMPONENTS,
                            quantile_thr=QUANTILE_THR,
                            use_mmr=True,
                            base_optim=BASE_OPTIM,
@@ -73,6 +75,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                                   season_length=freq_int,
                                   n_trials=N_TRIALS,
                                   target_pca=False,
+                                  pca_n_components=PCA_N_COMPONENTS,
                                   quantile_thr=QUANTILE_THR,
                                   use_mmr=True,
                                   base_optim=BASE_OPTIM,
@@ -83,6 +86,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                               season_length=freq_int,
                               n_trials=N_TRIALS,
                               target_pca=True,
+                              pca_n_components=PCA_N_COMPONENTS,
                               quantile_thr=QUANTILE_THR,
                               use_mmr=True,
                               base_optim=BASE_OPTIM,
@@ -93,6 +97,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                                 season_length=freq_int,
                                 n_trials=N_TRIALS,
                                 meta_regression=True,
+                                pca_n_components=PCA_N_COMPONENTS,
                                 quantile_thr=QUANTILE_THR,
                                 use_mmr=True,
                                 base_optim=BASE_OPTIM,
@@ -102,6 +107,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                                 freq=freq_str,
                                 season_length=freq_int,
                                 n_trials=N_TRIALS,
+                                pca_n_components=PCA_N_COMPONENTS,
                                 quantile_thr=QUANTILE_THR,
                                 use_mmr=True,
                                 base_optim='complete',
@@ -112,6 +118,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                               season_length=freq_int,
                               n_trials=N_TRIALS,
                               quantile_thr=QUANTILE_THR,
+                              pca_n_components=PCA_N_COMPONENTS,
                               use_mmr=True,
                               base_optim='mc',
                               mmr_lambda=LAMBDA)
@@ -121,6 +128,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                               season_length=freq_int,
                               n_trials=N_TRIALS,
                               quantile_thr=QUANTILE_THR,
+                              pca_n_components=PCA_N_COMPONENTS,
                               use_mmr=True,
                               base_optim=BASE_OPTIM,
                               mmr_lambda=LAMBDA)
@@ -129,6 +137,7 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                                  freq=freq_str,
                                  season_length=freq_int,
                                  n_trials=N_TRIALS,
+                                 pca_n_components=PCA_N_COMPONENTS,
                                  quantile_thr=QUANTILE_THR,
                                  use_mmr=False,
                                  base_optim=BASE_OPTIM,
@@ -176,14 +185,14 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
             meta_arima_mo.fit(df_uid, config_space=pred_list_mo[i])
             meta_arima_nommr.fit(df_uid, config_space=pred_list_nommr[i])
 
-            err_meta = cv.loc[uid, meta_arima.selected_config]
-            err_meta_nopca = cv.loc[uid, meta_arima_no_pca.selected_config]
-            err_meta_ch = cv.loc[uid, meta_arima_ch.selected_config]
-            err_meta_regr = cv.loc[uid, meta_arima_regr.selected_config]
-            err_meta_nosh = cv.loc[uid, meta_arima_nosh.selected_config]
-            err_meta_mc = cv.loc[uid, meta_arima_mc.selected_config]
-            err_meta_mo = cv.loc[uid, meta_arima_mo.selected_config]
-            err_meta_nommr = cv.loc[uid, meta_arima_nommr.selected_config]
+            err_meta = cv_test.loc[uid, meta_arima.selected_config]
+            err_meta_nopca = cv_test.loc[uid, meta_arima_no_pca.selected_config]
+            err_meta_ch = cv_test.loc[uid, meta_arima_ch.selected_config]
+            err_meta_regr = cv_test.loc[uid, meta_arima_regr.selected_config]
+            err_meta_nosh = cv_test.loc[uid, meta_arima_nosh.selected_config]
+            err_meta_mc = cv_test.loc[uid, meta_arima_mc.selected_config]
+            err_meta_mo = cv_test.loc[uid, meta_arima_mo.selected_config]
+            err_meta_nommr = cv_test.loc[uid, meta_arima_nommr.selected_config]
 
             comp = {
                 'MetaARIMA': err_meta,
