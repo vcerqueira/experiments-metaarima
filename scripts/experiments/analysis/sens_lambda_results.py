@@ -7,7 +7,7 @@ PLOT_NAME = 'assets/results/plots/lambda_scores.pdf'
 
 results_df = pd.read_csv('assets/results/sensitivity/lambda,M3,Monthly.csv')
 
-avg_scores = results_df.median(numeric_only=True)
+avg_scores = results_df.mean(numeric_only=True)
 
 meta_arima_mask = avg_scores.index.str.contains('MetaARIMA')
 df_meta = pd.DataFrame({
