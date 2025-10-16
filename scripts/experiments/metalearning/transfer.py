@@ -88,24 +88,15 @@ for j, (data_name, group) in enumerate(target_sets):
         err_ets = tgt_cv.loc[uid, 'score_AutoETS']
 
         config212 = f'ARIMA(2,1,2)(0,0,0)[{tgt_freq_int}]'
-        config2121 = f'ARIMA(2,1,2)(1,0,0)[{tgt_freq_int}]'
         config100 = f'ARIMA(1,0,0)(0,0,0)[{tgt_freq_int}]'
 
         err_arima212 = tgt_cv.loc[uid, config212]
-        err_arima2121 = tgt_cv.loc[uid, config2121]
         err_arima100 = tgt_cv.loc[uid, config100]
-
-        try:
-            err_auto2 = tgt_cv.loc[uid, auto_arima_config]
-        except KeyError:
-            err_auto2 = np.nan
 
         comp = {
             'MetaARIMA': err_meta,
             'AutoARIMA': err_auto,
-            'AutoARIMA2': err_auto2,
             'ARIMA(2,1,2)': err_arima212,
-            'ARIMA(2,1,2)(1,0,0)': err_arima2121,
             'ARIMA(1,0,0)': err_arima100,
             'SeasonalNaive': err_snaive,
             'AutoTheta': err_theta,

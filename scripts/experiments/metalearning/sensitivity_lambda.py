@@ -32,9 +32,9 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-X, y, _, _, cv = mdr.read(fill_na_value=-1)
-print(y.shape)
-print(cv.shape)
+X_dev, y_dev, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
+X, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
+print(cv_test.shape)
 
 kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
 
@@ -44,10 +44,9 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     print(f"  Train: index={train_index}")
     print(f"  Test:  index={test_index}")
 
-    X_train = X.iloc[train_index, :]
-    y_train = y.iloc[train_index, :]
+    X_train = X_dev.iloc[train_index, :]
+    y_train = y_dev.iloc[train_index, :]
     X_test = X.iloc[test_index, :]
-    y_test = y.iloc[test_index, :]
 
     mod = XGBRFRegressor()
 
@@ -86,12 +85,12 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
                 scores[f'MetaARIMA({str(lambda__)})'] = np.nan
                 continue
 
-            err_meta_mmr = cv.loc[uid, meta_arima.selected_config]
+            err_meta_mmr = cv_test.loc[uid, meta_arima.selected_config]
 
             scores[f'MetaARIMA({lambda__})'] = err_meta_mmr
 
         scores['unique_id'] = f'{data_name},{group},{uid}'
-        scores['AutoARIMA'] = cv.loc[uid, 'score_AutoARIMA']
+        scores['AutoARIMA'] = cv_test.loc[uid, 'score_AutoARIMA']
 
         pprint(scores)
 

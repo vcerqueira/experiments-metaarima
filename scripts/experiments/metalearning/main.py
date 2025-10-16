@@ -25,11 +25,9 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
-X, y, _, _, cv = mdr.read(from_dev_set=True, fill_na_value=-1)
-# todo esta errado--- ver ablation
-_, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
-print(y.shape)
-print(cv.shape)
+X_dev, y_dev, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
+X, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
+print(cv_test.shape)
 
 # note that this is cv on the time series set (80% of time series for train, 20% for testing)
 # partition is done at time series level, not in time dimension
@@ -41,10 +39,9 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
     print(f"  Train: index={train_index}")
     print(f"  Test:  index={test_index}")
 
-    X_train = X.iloc[train_index, :]
-    y_train = y.iloc[train_index, :]
+    X_train = X_dev.iloc[train_index, :]
+    y_train = y_dev.iloc[train_index, :]
     X_test = X.iloc[test_index, :]
-    y_test = y.iloc[test_index, :]
 
     meta_arima = MetaARIMA(model=XGBRFRegressor(),
                            freq=freq_str,

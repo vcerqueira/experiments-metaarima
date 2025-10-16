@@ -30,8 +30,7 @@ train, _ = data_loader.train_test_split(df, horizon=horizon)
 mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
 
 X_dev, y_dev, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
-X, y, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
-print(y.shape)
+X, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
 print(cv_test.shape)
 
 quantile_results = {}
