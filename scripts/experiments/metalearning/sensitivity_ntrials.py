@@ -96,4 +96,3 @@ results_df = pd.DataFrame(results)
 results_df.to_csv(f'assets/results/sensitivity/ntrials,{data_name},{group}.csv', index=False)
 
 print(results_df.mean(numeric_only=True))
-print(results_df.median())

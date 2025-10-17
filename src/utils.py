@@ -30,8 +30,8 @@ DATASET_PAIRS = [
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
     ('M3', 'Monthly'),
-    ('M4', 'Monthly'),
-    ('M4', 'Quarterly')
+    # ('M4', 'Monthly'),
+    # ('M4', 'Quarterly')
 ]
 
 THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
@@ -67,7 +67,7 @@ def read_results(file_path: str = RESULTS_DIR, read_len: bool = False) -> pd.Dat
         all_results.append(results_df_)
 
     df = pd.concat(all_results, ignore_index=True)
-    df = df.drop(columns=['unique_id', 'AutoARIMA2', 'ARIMA(2,1,2)(1,0,0)'])
+    df = df.drop(columns=['unique_id'])
 
     return df
 

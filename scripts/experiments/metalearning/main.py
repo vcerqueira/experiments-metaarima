@@ -8,11 +8,18 @@ from xgboost import XGBRFRegressor
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
-from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA, N_FOLDS, RANDOM_SEED, PCA_N_COMPONENTS
+from src.config import (MMR,
+                        N_TRIALS,
+                        QUANTILE_THR,
+                        BASE_OPTIM,
+                        LAMBDA,
+                        N_FOLDS,
+                        RANDOM_SEED,
+                        PCA_N_COMPONENTS)
 
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Tourism', 'Monthly'
+# data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
 # data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Quarterly'
@@ -34,7 +41,7 @@ print(cv_test.shape)
 kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
 
 results = []
-for j, (train_index, test_index) in enumerate(kfcv.split(X)):
+for j, (train_index, test_index) in enumerate(kfcv.split(X_dev)):
     print(f"Fold {j}:")
     print(f"  Train: index={train_index}")
     print(f"  Test:  index={test_index}")
@@ -104,8 +111,5 @@ for j, (train_index, test_index) in enumerate(kfcv.split(X)):
 results_df = pd.DataFrame(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
-print(results_df.drop(columns=['unique_id']).rank(axis=1).mean(numeric_only=True))
-print(results_df.dropna().mean(numeric_only=True))
-print(results_df.dropna().median(numeric_only=True))
 
 results_df.to_csv(f'assets/results/main/{data_name},{group}.csv', index=False)

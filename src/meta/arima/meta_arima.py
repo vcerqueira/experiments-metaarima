@@ -123,7 +123,10 @@ class MetaARIMA:
             self.model = _MetaARIMABaseMC(**base_params, n_trials=10, trial_n_obs=0.4)
         elif self.base_optim == 'halving':
             # todo hardcoded params2...
-            self.model = _HalvingMetaARIMABase(**base_params, eta=2, init_resource_factor=4, resource_factor=2)
+            self.model = _HalvingMetaARIMABase(**base_params,
+                                               eta=2,
+                                               init_resource_factor=5,
+                                               resource_factor=2)
         else:
             raise ValueError(f'Unknown base optimizer: {self.base_optim}')
 

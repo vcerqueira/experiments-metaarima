@@ -8,7 +8,7 @@ from src.utils import to_latex_tab, THEME, read_results
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-TRUNCATE_DIST = False
+TRUNCATE_DIST = True
 
 df = read_results()
 df_mt = df.drop(columns=['Dataset']).melt()
@@ -63,3 +63,5 @@ print(avg_by_ds_tab)
 
 med_by_ds_tab = to_latex_tab(med_by_ds, 4, rotate_cols=True)
 print(med_by_ds_tab)
+
+# todo win rates
