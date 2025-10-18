@@ -11,7 +11,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 df = read_results(read_len=True)
 df = df[['MetaARIMA','AutoETS','series_length']]
 
-lens = [50, 75, 100, 150]
+lens = [50, 75, 100,125, 150, 175, 200]
 sc = []
 for l_ in lens:
     df_ = df.query(f'series_length  > {l_}')
@@ -19,7 +19,7 @@ for l_ in lens:
 print(pd.DataFrame(sc))
 
 
-df = df.query('series_length  < 50')
+# df = df.query('series_length  > 50')
 
 # Calculate difference between MetaARIMA and AutoETS
 df['diff'] = df['MetaARIMA'] - df['AutoETS']
