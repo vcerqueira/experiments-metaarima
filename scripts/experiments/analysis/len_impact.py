@@ -14,10 +14,14 @@ df = df[['MetaARIMA','AutoETS','series_length']]
 lens = [50, 75, 100,125, 150, 175, 200]
 sc = []
 for l_ in lens:
-    df_ = df.query(f'series_length  > {l_}')
-    sc.append(df_.mean())
+    df_ = df.query(f'series_length  < {l_}')
+    x=df_.mean()
+    x['support'] = df_.shape[0]/df.shape[0]
+    sc.append(x)
 print(pd.DataFrame(sc))
 
+df.query('series_length  > 100').mean()
+df.query('series_length  < 100').mean()
 
 # df = df.query('series_length  > 50')
 
@@ -28,16 +32,16 @@ df['diff'] = np.sign(df['diff']) * np.log(np.abs(df['diff']) + 1)
 # df['diff'] = np.sign(df['MetaARIMA'] - df['AutoETS']) * np.log(np.abs(df['MetaARIMA'] - df['AutoETS']) + 1)
 
 # Create scatter plot
-plot = (p9.ggplot(df, p9.aes(x='np.log(series_length+1)', y='diff'))
-        + p9.geom_point(alpha=0.5)
-        + p9.geom_smooth(method='loess', color='blue')
-        + p9.geom_hline(yintercept=0, linetype='dashed', color='red')
-        + p9.labs(x='Series Length', 
-                 y='MetaARIMA - AutoETS Difference',
-                 title='Performance Difference vs Series Length')
-        + THEME)
-
-plot.save('test.pdf', width=6, height=5)
+# plot = (p9.ggplot(df, p9.aes(x='np.log(series_length+1)', y='diff'))
+#         + p9.geom_point(alpha=0.5)
+#         + p9.geom_smooth(method='loess', color='blue')
+#         + p9.geom_hline(yintercept=0, linetype='dashed', color='red')
+#         + p9.labs(x='Series Length',
+#                  y='MetaARIMA - AutoETS Difference',
+#                  title='Performance Difference vs Series Length')
+#         + THEME)
+#
+# plot.save('test.pdf', width=6, height=5)
 
 # Create length bins (10 bins, unnamed)
 df['length_bin'] = pd.qcut(df['series_length'], q=5)

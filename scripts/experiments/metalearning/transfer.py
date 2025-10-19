@@ -12,6 +12,8 @@ from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
 
 # data_name, group = 'M3', 'Monthly'
 
+# todo need m4 m dev, try removing short time series...
+
 target_sets = [
     ('M3', 'Monthly'),
     ('M3', 'Quarterly'),

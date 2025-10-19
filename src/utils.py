@@ -30,8 +30,8 @@ DATASET_PAIRS = [
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
     ('M3', 'Monthly'),
-    # ('M4', 'Monthly'),
-    # ('M4', 'Quarterly')
+    ('M4', 'Monthly'),
+    ('M4', 'Quarterly')
 ]
 
 THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
