@@ -11,11 +11,11 @@ from src.load_data.config import DATASETS
 from src.meta.arima._base import MetaARIMAUtils
 from src.config import ORDER_MAX
 
-data_name, group = 'M3', 'Monthly'
+# data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Tourism', 'Monthly'
 # data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
+data_name, group = 'M4', 'Monthly'
 # data_name, group = 'M4', 'Quarterly'
 
 print(data_name, group)
