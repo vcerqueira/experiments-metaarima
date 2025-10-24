@@ -9,14 +9,14 @@ from src.utils import THEME, read_results
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 df = read_results(read_len=True)
-df = df[['MetaARIMA','AutoETS','series_length']]
+df = df[['MetaARIMA', 'AutoETS', 'series_length']]
 
-lens = [50, 75, 100,125, 150, 175, 200]
+lens = [50, 75, 100, 125, 150, 175, 200]
 sc = []
 for l_ in lens:
     df_ = df.query(f'series_length  < {l_}')
-    x=df_.mean()
-    x['support'] = df_.shape[0]/df.shape[0]
+    x = df_.mean()
+    x['support'] = df_.shape[0] / df.shape[0]
     sc.append(x)
 print(pd.DataFrame(sc))
 
@@ -27,7 +27,7 @@ df.query('series_length  < 100').mean()
 
 # Calculate difference between MetaARIMA and AutoETS
 df['diff'] = df['MetaARIMA'] - df['AutoETS']
-df['diff'] = 100* ((df['MetaARIMA'] - df['AutoETS']) /df['AutoETS'])
+df['diff'] = 100 * ((df['MetaARIMA'] - df['AutoETS']) / df['AutoETS'])
 df['diff'] = np.sign(df['diff']) * np.log(np.abs(df['diff']) + 1)
 # df['diff'] = np.sign(df['MetaARIMA'] - df['AutoETS']) * np.log(np.abs(df['MetaARIMA'] - df['AutoETS']) + 1)
 
@@ -50,15 +50,15 @@ df['length_bin'] = pd.qcut(df['series_length'], q=5)
 perf_by_length = df.groupby('length_bin')[['MetaARIMA', 'AutoETS']].mean()
 
 # Melt for plotting
-perf_melted = perf_by_length.reset_index().melt(id_vars='length_bin', 
-                                               var_name='Method', 
-                                               value_name='SMAPE')
+perf_melted = perf_by_length.reset_index().melt(id_vars='length_bin',
+                                                var_name='Method',
+                                                value_name='SMAPE')
 
 plot = (p9.ggplot(perf_melted, p9.aes(x='length_bin', y='SMAPE', color='Method', group='Method'))
         + p9.geom_line(size=1.5)
         + p9.geom_point(size=3)
-        + p9.labs(x='Series Length Bin', y='Average SMAPE', 
-                 title='Performance vs Series Length')
+        + p9.labs(x='Series Length Bin', y='Average SMAPE',
+                  title='Performance vs Series Length')
         + THEME)
 
 plot.save('test2.pdf', width=8, height=6)
@@ -78,7 +78,7 @@ win_rates_melted = win_rates_pct.reset_index().melt(id_vars='length_bin',
 plot = (p9.ggplot(win_rates_melted, p9.aes(x='length_bin', y='Win Rate %', fill='Method'))
         + p9.geom_bar(stat='identity', position='stack')
         + p9.labs(x='Series Length Bin', y='Win Rate (%)',
-                 title='Method Win Rates by Series Length')
+                  title='Method Win Rates by Series Length')
         + THEME)
 
 plot.save('test3.pdf', width=8, height=6)

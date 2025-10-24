@@ -8,44 +8,35 @@ from xgboost import XGBRFRegressor
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
 from src.load_data.config import DATASETS
-from src.config import MMR, N_TRIALS, QUANTILE_THR, BASE_OPTIM, LAMBDA
-
-# data_name, group = 'M3', 'Monthly'
-
-# todo need m4 m dev, try removing short time series...
+from src.config import (MMR,
+                        N_TRIALS,
+                        QUANTILE_THR,
+                        BASE_OPTIM,
+                        LAMBDA,
+                        PCA_N_COMPONENTS)
 
 target_sets = [
     ('M3', 'Monthly'),
     ('M3', 'Quarterly'),
     ('Tourism', 'Monthly'),
     ('Tourism', 'Quarterly'),
-    # ('M4', 'Monthly'),
     ('M4', 'Quarterly'),
 ]
 
-# data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
-# data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Quarterly'
-# print(data_name, group)
-
 # -- train metamodel
-
 source_data_name, source_group = 'M4', 'Monthly'
 data_loader = DATASETS[source_data_name]
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(source_group, extended=True)
 train, _ = data_loader.train_test_split(df, horizon=horizon)
 mdr = MetadataReader(dataset_name=source_data_name, group=source_group, freq_int=freq_int)
-X, y, _, _, cv = mdr.read(fill_na_value=-1)
+X, y, _, _, _ = mdr.read(fill_na_value=-1)
 
-mod = XGBRFRegressor()
-
-meta_arima = MetaARIMA(model=mod,
+meta_arima = MetaARIMA(model=XGBRFRegressor(),
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
                        quantile_thr=QUANTILE_THR,
+                       pca_n_components=PCA_N_COMPONENTS,
                        use_mmr=MMR,
                        base_optim=BASE_OPTIM,
                        mmr_lambda=LAMBDA)
@@ -64,8 +55,6 @@ for j, (data_name, group) in enumerate(target_sets):
     tgt_train, _ = tgt_data_loader.train_test_split(tgt_df, horizon=tgt_horizon)
     tgt_mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=tgt_freq_int)
     tgt_X, _, _, _, tgt_cv = tgt_mdr.read(fill_na_value=-1)
-
-    # tgt_X = tgt_X.head(200)
 
     pred_list = meta_arima.meta_predict(tgt_X)
 
