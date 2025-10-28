@@ -26,7 +26,7 @@ class MetaARIMA:
                  target_pca: bool = True,
                  pca_n_components: int = 100,
                  base_optim: str = 'halving',
-                 quantile_thr: float = 0.25,
+                 quantile_thr: float = 0.5,
                  mmr_lambda: float = 0.75,
                  use_mmr: bool = True):
 
