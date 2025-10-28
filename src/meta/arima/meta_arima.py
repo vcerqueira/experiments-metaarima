@@ -187,9 +187,10 @@ class MetaARIMA:
 
         return selected_indices
 
-    @classmethod
-    def from_model(cls, n_trials: int):
-        # todo implement serialiation
+    def predict_and_fit(self, df: pd.DataFrame, freq: int):
+
+
+
 
         pass
 

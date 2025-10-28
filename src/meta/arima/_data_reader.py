@@ -1,5 +1,7 @@
 from typing import Optional
 import os
+import joblib
+import gzip
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -9,9 +11,9 @@ from src.meta.arima._base import MetaARIMAUtils
 
 
 class MetadataReader:
-    def __init__(self, dataset_name: str, 
-                 group: str, 
-                 freq_int: int, 
+    def __init__(self, dataset_name: str,
+                 group: str,
+                 freq_int: int,
                  id_col: str = 'unique_id'):
         """
         Args:
@@ -30,7 +32,7 @@ class MetadataReader:
         self.group = group
         self.freq_int = freq_int
 
-    def read(self, from_dev_set: bool=False,fill_na_value: Optional[float] = -1):
+    def read(self, from_dev_set: bool = False, fill_na_value: Optional[float] = -1):
         """ Read the data from the features and metadata cv files.
         Args:
             fill_na_value: float, value to fill na with
@@ -49,7 +51,7 @@ class MetadataReader:
         else:
             feats_path = self.features_dir / f"features,{self.dataset_name},{self.group}.csv"
             cv_path = self.metadata_cv_dir / f"arima,{self.dataset_name},{self.group}.csv"
-        
+
         feats = pd.read_csv(feats_path)
         cv = pd.read_csv(cv_path)
 
@@ -63,3 +65,15 @@ class MetadataReader:
         y = cv.loc[:, self.model_names]
 
         return X, y, self.input_variables, self.model_names, cv
+
+
+class ModelIO:
+    @staticmethod
+    def save_model(model, filename):
+        with gzip.open(filename, 'wb') as f:
+            joblib.dump(model, f)
+
+    @staticmethod
+    def load_model(filename):
+        with gzip.open(filename, 'rb') as f:
+            return joblib.load(f)
