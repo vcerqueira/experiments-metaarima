@@ -9,7 +9,8 @@ from src.meta.arima.multilabel_pca import MultiLabelPCARegressor
 from src.meta.arima._base import (MetaARIMAUtils,
                                   _MetaARIMABase,
                                   _HalvingMetaARIMABase,
-                                  _MetaARIMABaseMC)
+                                  _MetaARIMABaseMC,
+                                  tsfeatures_uid)
 
 warnings.filterwarnings(action='ignore')
 
@@ -187,12 +188,16 @@ class MetaARIMA:
 
         return selected_indices
 
-    def predict_and_fit(self, df: pd.DataFrame, freq: int):
+    def fit_model(self, df: pd.DataFrame, freq: int):
 
+        feat_df = tsfeatures_uid(df, freq)
 
+        config_space = self.meta_predict(feat_df)[0]
 
+        self.fit(df, config_space)
 
-        pass
+    def predict(self, h: int):
+        return self.model.predict(h)
 
     @staticmethod
     def _check_params(quantile_thr, mmr_lambda):

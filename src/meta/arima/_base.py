@@ -9,10 +9,23 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import jarque_bera
 from statsforecast.models import ARIMA
 from statsforecast import StatsForecast
+from tsfeatures import (acf_features, arch_stat, crossing_points,
+                        entropy, flat_spots, heterogeneity,
+                        holt_parameters, lumpiness, nonlinearity,
+                        pacf_features, stl_features, stability,
+                        hw_parameters, unitroot_kpss, unitroot_pp,
+                        series_length, hurst, scalets)
 
 from src.config import ORDER_MAX
 
 warnings.filterwarnings(action='ignore')
+
+FEATURE_ORDER = ['hurst', 'series_length', 'unitroot_pp', 'unitroot_kpss', 'hw_alpha', 'hw_beta', 'hw_gamma',
+                 'stability', 'nperiods', 'seasonal_period', 'trend', 'spike', 'linearity', 'curvature', 'e_acf1',
+                 'e_acf10', 'seasonal_strength', 'peak', 'trough', 'x_pacf5', 'diff1x_pacf5', 'diff2x_pacf5',
+                 'seas_pacf', 'nonlinearity', 'lumpiness', 'alpha', 'beta', 'arch_acf', 'garch_acf', 'arch_r2',
+                 'garch_r2', 'flat_spots', 'entropy', 'crossing_points', 'arch_lm', 'x_acf1', 'x_acf10', 'diff1_acf1',
+                 'diff1_acf10', 'diff2_acf1', 'diff2_acf10', 'seas_acf1']
 
 
 class _MetaARIMABase:
@@ -333,3 +346,39 @@ class MetaARIMAUtils:
         }
 
         return pvals
+
+
+def tsfeatures_uid(uid_df: pd.DataFrame,
+                   freq: int,
+                   target_col: str = 'y',
+                   id_col: str = 'unique_id'):
+
+    x_r = uid_df[target_col].values
+    x = scalets(x_r)
+
+    feats = {
+        **hurst(x, freq),
+        **series_length(x, freq),
+        **unitroot_pp(x, freq),
+        **unitroot_kpss(x, freq),
+        **hw_parameters(x, freq),
+        **stability(x, freq),
+        **stl_features(x, freq),
+        **pacf_features(x, freq),
+        **nonlinearity(x, freq),
+        **lumpiness(x, freq),
+        **holt_parameters(x, freq),
+        **heterogeneity(x, freq),
+        **flat_spots(x, freq),
+        **entropy(x, freq),
+        **crossing_points(x, freq),
+        **arch_stat(x, freq),
+        **acf_features(x, freq),
+    }
+
+    feats_series = pd.Series(feats)[FEATURE_ORDER]
+
+    feats_df = pd.DataFrame(feats_series).T.fillna(-1)
+    feats_df.index = [uid_df[id_col].values[0]]
+
+    return feats_df

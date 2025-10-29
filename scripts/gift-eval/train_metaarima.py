@@ -1,5 +1,3 @@
-import joblib
-
 from xgboost import XGBRFRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
@@ -36,8 +34,20 @@ meta_arima.meta_fit(X, y)
 
 ModelIO.save_model(meta_arima, FILENAME)
 
+
 loaded_metaarima = ModelIO.load_model(FILENAME)
 
 preds = loaded_metaarima.meta_predict(X.head(2))
 
 print(preds)
+
+example_df = df.query('unique_id=="M1"')
+freq_int = 12
+
+
+feat_df = tsfeatures_uid(example_df, freq_int)
+
+config_space = loaded_metaarima.meta_predict(feat_df)[0]
+
+loaded_metaarima.fit(example_df, config_space)
+loaded_metaarima.model.predict(h=12)
