@@ -8,6 +8,7 @@ from scipy import stats
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import jarque_bera
 from statsforecast.models import ARIMA
+from statsforecast.utils import ConformalIntervals
 from statsforecast import StatsForecast
 from tsfeatures import (acf_features, arch_stat, crossing_points,
                         entropy, flat_spots, heterogeneity,
@@ -52,8 +53,11 @@ class _MetaARIMABase:
         self.sf.fitted_ = np.array([[self.sf.fitted_[0][best_idx]]])
         self.sf.fitted_[0][0].alias = self.alias
 
-    def predict(self, h: int):
-        return self.sf.predict(h=h)
+    def predict(self, h: int, level: Optional[List]):
+        if level is not None:
+            return self.sf.predict(h=h, level=level)
+        else:
+            return self.sf.predict(h=h)
 
 
 class _HalvingMetaARIMABase(_MetaARIMABase):
@@ -270,7 +274,9 @@ class MetaARIMAUtils:
                                     ARIMA(order=(ar, i, ma),
                                           season_length=season_length,
                                           seasonal_order=(s_ar, s_i, s_ma),
-                                          alias=f'ARIMA({ar},{i},{ma})({s_ar},{s_i},{s_ma})[{season_length}]')
+                                          alias=f'ARIMA({ar},{i},{ma})({s_ar},{s_i},{s_ma})[{season_length}]',
+                                          # prediction_intervals=ConformalIntervals(h=12)
+                                          )
                                 )
 
         if return_names:
@@ -352,7 +358,6 @@ def tsfeatures_uid(uid_df: pd.DataFrame,
                    freq: int,
                    target_col: str = 'y',
                    id_col: str = 'unique_id'):
-
     x_r = uid_df[target_col].values
     x = scalets(x_r)
 

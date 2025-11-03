@@ -1,6 +1,6 @@
 import warnings
 import copy
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -196,8 +196,8 @@ class MetaARIMA:
 
         self.fit(df, config_space)
 
-    def predict(self, h: int):
-        return self.model.predict(h)
+    def predict(self, h: int, level: Optional[List] = None):
+        return self.model.predict(h, level=level)
 
     @staticmethod
     def _check_params(quantile_thr, mmr_lambda):

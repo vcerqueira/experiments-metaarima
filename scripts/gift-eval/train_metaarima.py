@@ -12,7 +12,7 @@ from src.config import (MMR,
 
 FILENAME = 'assets/trained_metaarima_m4m.joblib.gz'
 # -- train metamodel
-source_data_name, source_group = 'M4', 'Monthly'
+source_data_name, source_group = 'M3', 'Monthly'
 data_loader = DATASETS[source_data_name]
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(source_group, extended=True)
 train, _ = data_loader.train_test_split(df, horizon=horizon)
