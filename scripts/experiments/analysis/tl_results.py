@@ -10,7 +10,8 @@ PLOT_NAME = 'assets/results/plots/transfer_scores.pdf'
 results_df = pd.read_csv('assets/results/sensitivity/transfer,M4,Monthly.csv')
 
 avg_scores = results_df.mean(numeric_only=True).reset_index()
-avg_scores = results_df.groupby('dataset').mean(numeric_only=True).reset_index()
+avg_scores_ = results_df.groupby('dataset').mean(numeric_only=True).reset_index()
+print(avg_scores_)
 avg_scores.columns = ['variable', 'SMAPE']
 
 plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'variable', 'y': 'SMAPE'})) + \
