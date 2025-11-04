@@ -8,9 +8,9 @@ from src.utils import THEME
 PLOT_NAME = 'assets/results/plots/transfer_scores.pdf'
 
 results_df = pd.read_csv('assets/results/sensitivity/transfer,M4,Monthly.csv')
-results_df = results_df.drop(columns=['AutoARIMA2', 'ARIMA(2,1,2)(1,0,0)'])
 
-avg_scores = results_df.median(numeric_only=True).reset_index()
+avg_scores = results_df.mean(numeric_only=True).reset_index()
+avg_scores = results_df.groupby('dataset').mean(numeric_only=True).reset_index()
 avg_scores.columns = ['variable', 'SMAPE']
 
 plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'variable', 'y': 'SMAPE'})) + \

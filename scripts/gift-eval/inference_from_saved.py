@@ -20,9 +20,5 @@ freq = 12  # monthly
 
 metaarima.fit_model(df, freq)
 
-metaarima.predict(h=18, level=None)
-fcst = metaarima.predict(h=12, level=[50])
-
-fcst['MetaARIMA-median'] = (fcst['MetaARIMA-hi-50'] + fcst['MetaARIMA-lo-50']) / 2
-
-
+print(metaarima.predict(h=18, level=None))
+print(metaarima.predict(h=12, level=[95]))
