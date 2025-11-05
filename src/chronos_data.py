@@ -9,67 +9,91 @@ from huggingface_hub import dataset_info
 
 class ChronosDataset:
     # https://github.com/autogluon/fev/blob/main/benchmarks/chronos_zeroshot/results/auto_arima.csv
+    # https://github.com/SalesforceAIResearch/gift-eval/blob/main/results/naive/all_results.csv
 
     DATASET_NAME = 'CHRONOS'
     REPO_ID = 'autogluon/chronos_datasets'
 
-    horizons_map = {
-        'm1_quarterly': 2,
-        'm1_monthly': 8,
-        'm1_yearly': 4,
-        'tourism_monthly': 12,
-        'tourism_quarterly': 8,
-        'tourism_yearly': 4,
+    FREQUENCY_MAP_DATASETS = {
+        'monash_m1_monthly': 'M',
+        'monash_m1_quarterly': 'Q',
+        'monash_m1_yearly': 'Y',
+        'monash_m3_monthly': 'M',
+        'monash_m3_quarterly': 'Q',
+        'monash_m3_yearly': 'Y',
+        'monash_tourism_monthly': 'M',
+        'monash_tourism_quarterly': 'Q',
+        'monash_tourism_yearly': 'Y',
+        'm4_hourly': 'H',
+        'm4_monthly': 'M',
+        'm4_quarterly': 'Q',
+        'm4_weekly': 'W',
+        'm4_daily': 'D',
+        'm4_yearly': 'Y',
+        'monash_hospital': 'MS',
+        'monash_car_parts': 'MS',
     }
 
-    frequency_map = {
-        'm1_quarterly': 4,
-        'm1_monthly': 12,
-        'm1_yearly': 1,
-        'tourism_monthly': 12,
-        'tourism_quarterly': 4,
-        'tourism_yearly': 1,
+    M4_HORIZON_MAP = {
+        "Y": 6,
+        "Q": 8,
+        "M": 18,
+        "MS": 18,
+        "ME": 18,
+        "W": 13,
+        "D": 14,
+        "H": 48,
     }
 
-    context_length = {
-        'm1_quarterly': 4,
-        'm1_monthly': 12,
-        'm1_yearly': 3,
-        'tourism_monthly': 24,
-        'tourism_quarterly': 8,
-        'tourism_yearly': 3,
+    HORIZON_MAP = {
+        "Y": 6,
+        "Q": 8,
+        "M": 12,
+        "MS": 12,
+        "ME": 12,
+        "W": 8,
+        "D": 30,
+        "H": 48,
+        "T": 48,
+        "S": 60,
     }
 
-    frequency_pd = {
-        'm1_quarterly': 'Q',
-        'm1_monthly': 'M',
-        'm1_yearly': 'Y',
-        'tourism_monthly': 'M',
-        'tourism_quarterly': 'Q',
-        'tourism_yearly': 'Y',
+    FREQUENCY_MAP = {
+        "Y": 1,
+        "Q": 4,
+        "M": 12,
+        "MS": 12,
+        "ME": 12,
+        "W": 52,  # ?
+        "D": 365,  # 7?
+        "H": 24,
+        "T": 1,  # ?
+        "S": 1,  # ?
     }
 
-    data_group = [*horizons_map]
-    horizons = [*horizons_map.values()]
-    frequency = [*frequency_map.values()]
+    # LAGS_BY_FREQUENCY = {k: int(v * 1.25) for k, v in HORIZON_MAP.items()}
 
     @classmethod
     def load_data(cls,
                   group: str,
-                  split: str,
+                  split: str = 'train',
                   min_n_instances: Optional[int] = None,
                   id_col: str = 'unique_id',
                   time_col: str = 'ds',
                   target_col: str = 'y'):
 
+        assert group in [*cls.FREQUENCY_MAP_DATASETS], 'Unknown dataset'
+
         ds = datasets.load_dataset(path=cls.REPO_ID, name=group, split=split)
         ds.set_format("numpy")
 
-        df = cls.to_pandas(ds)
+        df = cls.to_pandas(ds).reset_index(drop=True)
         df = df.rename(columns={'id': id_col,
                                 'timestamp': time_col,
                                 'target': target_col})
-        df = df.drop(columns=['category'])
+
+        if 'category' in df.columns:
+            df = df.drop(columns=['category'])
 
         if min_n_instances is not None:
             df = cls.prune_uids_by_size(df, min_n_instances)
@@ -79,28 +103,33 @@ class ChronosDataset:
     @classmethod
     def load_everything(cls,
                         group: str,
-                        split: str,
+                        split: str = 'train',
                         min_n_instances: Optional[int] = None,
                         sample_n_uid: Optional[int] = None):
 
-        if split == 'both':
-            # todo ..
-            pass
+        # if split == 'both':
+        #     df_train = cls.load_data(group=group, split='train', min_n_instances=min_n_instances)
+        #     df_test = cls.load_data(group=group, split='test', min_n_instances=min_n_instances)
+        #     df = pd.concat([df_train, df_test], axis=0).sort_values([id_col, time_col]).reset_index(drop=True)
 
-        df = cls.load_data(group=group,
-                           split=split,
-                           min_n_instances=min_n_instances)
+        df = cls.load_data(group=group, split=split, min_n_instances=min_n_instances)
 
-        horizon = cls.horizons_map.get(group)
-        n_lags = cls.context_length.get(group)
-        freq_str = cls.frequency_pd.get(group)
-        freq_int = cls.frequency_map.get(group)
+        freq = cls.FREQUENCY_MAP_DATASETS.get(group)
+
+        if group.startswith('m4'):
+            horizon = cls.M4_HORIZON_MAP.get(freq)
+        else:
+            horizon = cls.HORIZON_MAP.get(freq)
+
+        n_lags = int(horizon * 1.25)
+
+        seas_len = cls.FREQUENCY_MAP.get(freq)
 
         if sample_n_uid is not None:
             assert isinstance(df, pd.DataFrame)
             df = cls.sample_first_uids(df, sample_n_uid)
 
-        return df, horizon, n_lags, freq_str, freq_int
+        return df, horizon, n_lags, freq, seas_len
 
     @staticmethod
     def prune_uids_by_size(df: pd.DataFrame,
@@ -165,6 +194,20 @@ class ChronosDataset:
         test_df = pd.concat(test_l).reset_index(drop=True)
 
         return train_df, test_df
+
+    @staticmethod
+    def difference_series(df):
+        df_uid = df.copy().groupby('unique_id')
+
+        diff_l = []
+        for g, uid_df in df_uid:
+            uid_df['y'] = uid_df['y'].diff()
+
+            diff_l.append(uid_df.tail(-1))
+
+        diff_df = pd.concat(diff_l, axis=0).reset_index(drop=True)
+
+        return diff_df
 
     @staticmethod
     def get_chronos_datasets_names(repo_id='autogluon/chronos_datasets'):
