@@ -8,7 +8,7 @@ from functools import partial
 
 import pandas as pd
 from statsforecast import StatsForecast
-from utilsforecast.losses import mase
+from utilsforecast.losses import mase, smape
 from utilsforecast.evaluation import evaluate
 
 from src.meta.arima._base import MetaARIMAUtils
@@ -68,7 +68,8 @@ def process_series(
     logging.info(f"Forecast completed for series: {uid}")
 
     err_df = evaluate(df=fcst,
-                      metrics=[partial(mase, seasonality=seas_len)],
+                      # metrics=[partial(mase, seasonality=seas_len)],
+                      metrics=[smape],
                       train_df=uid_insample)
 
     avg_err = err_df.mean(numeric_only=True)
