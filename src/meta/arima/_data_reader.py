@@ -11,14 +11,13 @@ from src.meta.arima._base import MetaARIMAUtils
 
 
 class MetadataReader:
-    def __init__(self, dataset_name: str,
+    def __init__(self,
                  group: str,
                  freq_int: int,
                  id_col: str = 'unique_id'):
         """
         Args:
-            dataset_name: str, name of the dataset
-            group: str, group of the dataset
+            group: str, name of the dataset
             freq_int: int, frequency of the dataset
             id_col: str, name of the id column
         """
@@ -28,13 +27,13 @@ class MetadataReader:
         self.id_col = id_col
         self.input_variables = None
         self.model_names = None
-        self.dataset_name = dataset_name
         self.group = group
         self.freq_int = freq_int
 
     def read(self, from_dev_set: bool = False, fill_na_value: Optional[float] = -1):
         """ Read the data from the features and metadata cv files.
         Args:
+            from_dev_set: whether to use data that excludes the test set or not. Defaults to False (no test leakage)
             fill_na_value: float, value to fill na with
             fill_na_value is not None, then fill na with the value
 
@@ -46,11 +45,11 @@ class MetadataReader:
             cv: pd.DataFrame, metadata cv
         """
         if from_dev_set:
-            feats_path = self.features_dir / f"features-dev,{self.dataset_name},{self.group}.csv"
-            cv_path = self.metadata_cv_dir / f"arima-dev,{self.dataset_name},{self.group}.csv"
+            feats_path = self.features_dir / f"features-dev,{self.group}.csv"
+            cv_path = self.metadata_cv_dir / f"arima-dev,{self.group}.csv"
         else:
-            feats_path = self.features_dir / f"features,{self.dataset_name},{self.group}.csv"
-            cv_path = self.metadata_cv_dir / f"arima,{self.dataset_name},{self.group}.csv"
+            feats_path = self.features_dir / f"features,{self.group}.csv"
+            cv_path = self.metadata_cv_dir / f"arima,{self.group}.csv"
 
         feats = pd.read_csv(feats_path)
         cv = pd.read_csv(cv_path)

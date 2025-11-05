@@ -1,17 +1,19 @@
 import re
 from pprint import pprint
+from functools import partial
 
 import pandas as pd
 import numpy as np
 
 from datasetsforecast.m3 import M3
-from utilsforecast.losses import smape
+from utilsforecast.losses import smape, mase
 from statsforecast import StatsForecast
 from statsforecast.models import AutoARIMA
 
 from src.meta.arima._data_reader import ModelIO
 
 FILENAME = 'assets/trained_metaarima_m4m.joblib.gz'
+# FILENAME = 'assets/trained_metaarima_m4m_cb.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 # meta_arima.n_trials = 60
 
@@ -54,7 +56,7 @@ for uid in uids:
     test = df_uid_ts.merge(fcst_ma, on=['unique_id', 'ds'])
     test = test.merge(fcst_aa_uid, on=['unique_id', 'ds'])
 
-    err = smape(df=test, models=['MetaARIMA', 'AutoARIMA'])
+    err = mase(df=test, models=['MetaARIMA', 'AutoARIMA'], seasonality=freq)
 
     pprint(err)
 
