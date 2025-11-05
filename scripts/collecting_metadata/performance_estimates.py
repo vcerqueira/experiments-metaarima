@@ -18,7 +18,7 @@ from utilsforecast.losses import mase
 from utilsforecast.evaluation import evaluate
 
 from src.meta.arima._base import MetaARIMAUtils
-from src.config import ORDER_MAX
+from src.config import ORDER_MAX, ORDER_MAX_NONSEASONAL
 from src.chronos_data import ChronosDataset
 
 GROUP = 'monash_m1_monthly'
@@ -32,7 +32,9 @@ train, _ = ChronosDataset.time_wise_split(df, horizon=horizon)
 # split train into dev and validation
 dev, validation = ChronosDataset.time_wise_split(train, horizon=horizon)
 
-models = MetaARIMAUtils.get_models_sf(season_length=seas_len, max_config=ORDER_MAX)
+ord = ORDER_MAX if seas_len > 1 else ORDER_MAX_NONSEASONAL
+
+models = MetaARIMAUtils.get_models_sf(season_length=seas_len, max_config=ord)
 print(len(models))
 
 os.environ["OMP_NUM_THREADS"] = "1"
