@@ -17,12 +17,11 @@ from src.chronos_data import ChronosDataset
 
 warnings.filterwarnings("ignore")
 
-# GROUP = 'm4_quarterly'
 GROUP = 'm4_monthly'
+# GROUP = 'm4_quarterly'
 # GROUP = 'm4_yearly'
 
-# df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP)
-df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP, sample_n_uid=30)
+df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP)
 
 # discard test
 train, _ = ChronosDataset.time_wise_split(df, horizon=horizon)
