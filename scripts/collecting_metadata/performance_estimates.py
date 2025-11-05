@@ -1,31 +1,28 @@
-import sys
 import os
 import logging
 import warnings
-from pprint import pprint
 from pathlib import Path
 from typing import List
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 
-warnings.filterwarnings("ignore")
-
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 import pandas as pd
 from statsforecast import StatsForecast
-from utilsforecast.losses import mase
+from utilsforecast.losses import mase, smape
 from utilsforecast.evaluation import evaluate
 
 from src.meta.arima._base import MetaARIMAUtils
 from src.config import ORDER_MAX, ORDER_MAX_NONSEASONAL
 from src.chronos_data import ChronosDataset
 
-GROUP = 'monash_m1_monthly'
+warnings.filterwarnings("ignore")
+
+# GROUP = 'm4_quarterly'
+GROUP = 'm4_monthly'
+# GROUP = 'm4_yearly'
 
 # df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP)
 df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP, sample_n_uid=30)
-# df = ChronosDataset.dummify_series(df)
 
 # discard test
 train, _ = ChronosDataset.time_wise_split(df, horizon=horizon)
@@ -35,7 +32,6 @@ dev, validation = ChronosDataset.time_wise_split(train, horizon=horizon)
 ord = ORDER_MAX if seas_len > 1 else ORDER_MAX_NONSEASONAL
 
 models = MetaARIMAUtils.get_models_sf(season_length=seas_len, max_config=ord)
-print(len(models))
 
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -72,7 +68,13 @@ def process_series(
     fcst = fcst.merge(outsample, on=["unique_id", "ds"])
     logging.info(f"Forecast completed for series: {uid}")
 
-    err_df = evaluate(df=fcst, metrics=[partial(mase, seasonality=seas_len)])
+    # err_df = evaluate(df=fcst,
+    #                   metrics=[partial(mase, seasonality=seas_len)],
+    #                   train_df=uid_insample)
+    err_df = evaluate(df=fcst,
+                      metrics=[smape],
+                      train_df=uid_insample)
+
     avg_err = err_df.mean(numeric_only=True)
 
     best_model_name = avg_err.sort_values().index[0]

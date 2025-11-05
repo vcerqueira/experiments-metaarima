@@ -1,7 +1,7 @@
 import numpy as np
 
-ORDER_MAX = {'AR': 2, 'I': 1, 'MA': 2, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
-ORDER_MAX_NONSEASONAL = {'AR': 2, 'I': 1, 'MA': 2, 'S_AR': 0, 'S_I': 0, 'S_MA': 0}
+ORDER_MAX = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 1, 'S_I': 1, 'S_MA': 1}
+ORDER_MAX_NONSEASONAL = {'AR': 4, 'I': 1, 'MA': 4, 'S_AR': 0, 'S_I': 0, 'S_MA': 0}
 N_TRIALS_SPACE = [1, 2, 5, 10, 20, 30, 40, 50, 75, 94]
 QUANTILE_THR = 0.5
 PCA_N_COMPONENTS = 100
