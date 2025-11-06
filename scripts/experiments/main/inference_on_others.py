@@ -14,8 +14,8 @@ from statsforecast.models import (AutoARIMA,
 from src.meta.arima._data_reader import ModelIO
 from src.chronos_data import ChronosDataset
 
-# FILENAME = 'assets/trained_metaarima_m4m_lgbm.joblib.gz'
-FILENAME = 'assets/trained_metaarima_m4m.joblib.gz'
+FILENAME = 'assets/trained_metaarima_m4m_cb.joblib.gz'
+# FILENAME = 'assets/trained_metaarima_m4m.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
 target = 'monash_m1_monthly'
@@ -96,4 +96,4 @@ print(results_df.median(numeric_only=True))
 # SeasonalNaive    0.993393
 # dtype: float64
 
-results_df.to_csv(f'assets/results/main/{target}.csv', index=False)
+# results_df.to_csv(f'assets/results/main/{target}.csv', index=False)

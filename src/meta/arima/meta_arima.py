@@ -119,15 +119,12 @@ class MetaARIMA:
         feat_df = tsfeatures_uid(df, self.season_length_inference)
 
         config_space = self.meta_predict(feat_df)[0]
-        print('config_space')
-        print(config_space)
+
         if self.season_length_inference != self.season_length:
             config_space = [
                 s.replace(f'[{self.season_length}]', f'[{self.season_length_inference}]')
                 for s in config_space
             ]
-
-        print(config_space)
 
         self._fit_on_configs(df, config_space)
 
