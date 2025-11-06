@@ -46,4 +46,8 @@ print("Best parameters:", random_search.best_params_)
 print("Best validation score:", random_search.best_score_)
 pprint(random_search.best_params_)
 
-BEST_RF_PARAMS = {}
+BEST_RF_PARAMS = {'colsample_bynode': 0.8018423785145038,
+                  'learning_rate': 0.8121792213475358,
+                  'n_estimators': 159,
+                  'reg_lambda': 0.0007309399242521293,
+                  'subsample': 0.8772547126671503}

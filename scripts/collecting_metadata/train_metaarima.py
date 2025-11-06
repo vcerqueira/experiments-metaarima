@@ -21,15 +21,6 @@ _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
 
-# model = CatBoostRegressor(
-#     loss_function="MultiRMSE",
-#     eval_metric="MultiRMSE",
-#     iterations=300,
-#     depth=3,
-#     learning_rate=0.05,
-#     random_seed=42,
-# )
-
 BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
                         'border_count': 32,
                         'depth': 4,
@@ -48,17 +39,43 @@ BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
                         'use_best_model': False,
                         'verbose': False}
 
-BEST_LGBM_PARAMS = {'colsample_bytree': 0.8468358280832688,
-                    'learning_rate': 0.10856504541106007,
+#
+# BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
+#                         'border_count': 64,
+#                         'depth': 4,
+#                         'eval_metric': 'MultiRMSE',
+#                         'iterations': 1000,
+#                         'l2_leaf_reg': 44.766640345162486,
+#                         'leaf_estimation_iterations': 3,
+#                         'learning_rate': 0.05542045515461307,
+#                         'loss_function': 'MultiRMSE',
+#                         'model_size_reg': 2.490479898592805,
+#                         'od_type': 'Iter',
+#                         'od_wait': 50,
+#                         'random_seed': 42,
+#                         'rsm': 0.8036450022637952,
+#                         'task_type': 'CPU',
+#                         'use_best_model': False,
+#                         'verbose': False}
+
+BEST_LGBM_PARAMS = {'colsample_bytree': 0.954674147279825,
+                    'learning_rate': 0.08217295211648731,
                     'max_depth': 4,
-                    'min_child_samples': 77,
-                    'n_estimators': 282,
-                    'num_leaves': 142,
-                    'subsample': 0.7726479814832277}
+                    'min_child_samples': 23,
+                    'n_estimators': 970,
+                    'num_leaves': 46,
+                    'subsample': 0.8568198488145982}
+
+BEST_RF_PARAMS = {'colsample_bynode': 0.8018423785145038,
+                  'learning_rate': 0.8121792213475358,
+                  'n_estimators': 159,
+                  'reg_lambda': 0.0007309399242521293,
+                  'subsample': 0.8772547126671503}
 
 # model = MultiOutputRegressor(LGBMRegressor(**BEST_LGBM_PARAMS))
 model = CatBoostRegressor(**BEST_CATBOOST_PARAMS)
 # model = XGBRFRegressor()
+# model = XGBRFRegressor(**BEST_RF_PARAMS)
 
 meta_arima = MetaARIMA(model=model,
                        freq=freq_str,
