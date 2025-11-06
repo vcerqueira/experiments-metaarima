@@ -21,16 +21,24 @@ _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
 
-model = CatBoostRegressor(
-    loss_function="MultiRMSE",
-    eval_metric="MultiRMSE",
-    iterations=300,
-    depth=3,
-    learning_rate=0.05,
-    random_seed=42,
-)
+# model = CatBoostRegressor(
+#     loss_function="MultiRMSE",
+#     eval_metric="MultiRMSE",
+#     iterations=300,
+#     depth=3,
+#     learning_rate=0.05,
+#     random_seed=42,
+# )
 
-# model = MultiOutputRegressor(LGBMRegressor())
+BEST_LGBM_PARAMS = {'colsample_bytree': 0.8468358280832688,
+                    'learning_rate': 0.10856504541106007,
+                    'max_depth': 4,
+                    'min_child_samples': 77,
+                    'n_estimators': 282,
+                    'num_leaves': 142,
+                    'subsample': 0.7726479814832277}
+
+model = MultiOutputRegressor(LGBMRegressor(**BEST_LGBM_PARAMS))
 
 # model = XGBRFRegressor()
 

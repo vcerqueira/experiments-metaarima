@@ -102,9 +102,12 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
     return final, study.best_params
 
 
-opt_model, best_params = tune_catboost_small(X, y, n_trials=2, random_state=42)
+opt_model, best_params = tune_catboost_small(X, y,
+                                             n_trials=30,
+                                             random_state=42)
 
 print(opt_model.get_params())
+
 #
 # model = CatBoostRegressor(**BEST_CATBOOST_PARAMS)
 #
