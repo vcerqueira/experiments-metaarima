@@ -1,11 +1,15 @@
 from pprint import pprint
+from copy import deepcopy
 
 import pandas as pd
-import numpy as np
 
 from utilsforecast.losses import mase
 from statsforecast import StatsForecast
-from statsforecast.models import AutoARIMA
+from statsforecast.models import (AutoARIMA,
+                                  AutoETS,
+                                  AutoTheta,
+                                  SeasonalNaive,
+                                  ARIMA)
 
 from src.meta.arima._data_reader import ModelIO
 from src.chronos_data import ChronosDataset
@@ -18,7 +22,21 @@ target = 'monash_m1_monthly'
 df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
 train, test = ChronosDataset.time_wise_split(df, horizon)
 
+sf_models = [AutoARIMA(season_length=seas_len),
+             AutoETS(season_length=seas_len),
+             AutoTheta(season_length=seas_len),
+             SeasonalNaive(season_length=seas_len),
+             ARIMA(order=(1, 0, 0), season_length=seas_len, alias='AR'),
+             ARIMA(order=(0, 0, 1), season_length=seas_len, alias='MA'),
+             ARIMA(order=(1, 0, 1), season_length=seas_len, alias='ARMA'),
+             ARIMA(order=(2, 1, 2), season_length=seas_len, alias='ARIMA'),
+             ARIMA(order=(1, 0, 1),
+                   seasonal_order=(1, 0, 1),
+                   season_length=seas_len,
+                   alias='SARIMA')
+             ]
 
+model_names = ['MetaARIMA', 'AutoARIMA', 'AutoETS', 'AutoTheta', 'AR', 'MA', 'ARMA', 'ARIMA']
 
 uids = train['unique_id'].unique().tolist()
 
@@ -29,24 +47,19 @@ for uid in uids:
     df_uid_tr = train.query(f'unique_id=="{uid}"').reset_index(drop=True)
     df_uid_ts = test.query(f'unique_id=="{uid}"').reset_index(drop=True)
 
-    meta_arima.fit_model(df_uid_tr, freq=freq)
+    meta_arima.fit(df_uid_tr, freq=freq, seas_length=seas_len)
 
     fcst_ma = meta_arima.predict(h=horizon)
 
-    sf = StatsForecast(models=[AutoARIMA(season_length=freq)], freq=freq)
-
-    sf.fit(m3_train)
+    sf = StatsForecast(models=deepcopy(sf_models), freq=freq)
+    sf.fit(df_uid_tr)
 
     fcst_aa = sf.forecast(h=horizon)
 
+    uid_test = df_uid_ts.merge(fcst_ma, on=['unique_id', 'ds'])
+    uid_test = uid_test.merge(fcst_aa, on=['unique_id', 'ds'])
 
-    fcst_aa_uid = fcst_aa.query(f'unique_id=="{uid}"')
-
-    test = df_uid_ts.merge(fcst_ma, on=['unique_id', 'ds'])
-    test = test.merge(fcst_aa_uid, on=['unique_id', 'ds'])
-
-    err = mase(df=test, models=['MetaARIMA', 'AutoARIMA'],
-               seasonality=freq, train_df=df_uid_tr)
+    err = mase(df=uid_test, models=model_names, seasonality=seas_len, train_df=df_uid_tr)
 
     pprint(err)
 
@@ -58,7 +71,3 @@ for uid in uids:
 results_df = pd.concat(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
-
-results_df = results_df.merge(m3_monthly['unique_id'].value_counts(), on=['unique_id'])
-
-results_df.query('count<100').mean(numeric_only=True)
