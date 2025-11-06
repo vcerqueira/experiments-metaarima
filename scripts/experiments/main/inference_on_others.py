@@ -36,7 +36,10 @@ sf_models = [AutoARIMA(season_length=seas_len),
                    alias='SARIMA')
              ]
 
-model_names = ['MetaARIMA', 'AutoARIMA', 'AutoETS', 'AutoTheta', 'AR', 'MA', 'ARMA', 'ARIMA']
+model_names = ['MetaARIMA', 'AutoARIMA',
+               'AutoETS', 'AutoTheta',
+               'AR', 'MA', 'ARMA',
+               'ARIMA', 'SeasonalNaive']
 
 uids = train['unique_id'].unique().tolist()
 
@@ -71,3 +74,5 @@ for uid in uids:
 results_df = pd.concat(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
+
+results_df.to_csv(f'assets/results/main/{target}.csv', index=False)
