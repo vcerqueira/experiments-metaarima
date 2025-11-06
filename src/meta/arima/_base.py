@@ -131,6 +131,8 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
         """
         Fit using successive halving to efficiently select the best model.
         """
+        assert self.nmodels > 0, 'nmodels is not positive'
+
         n_rows = df.shape[0]
         n_models = self.nmodels
 

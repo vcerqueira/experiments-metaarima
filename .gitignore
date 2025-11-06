@@ -174,3 +174,4 @@ experiments_extra/
 extra
 scripts/experiments/_dev/
 assets/metadata/*
+catboost_info/

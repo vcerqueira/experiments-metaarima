@@ -21,7 +21,6 @@ _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
 
-
 model = CatBoostRegressor(
     loss_function="MultiRMSE",
     eval_metric="MultiRMSE",
@@ -49,12 +48,30 @@ meta_arima.meta_fit(X, y)
 
 ModelIO.save_model(meta_arima, FILENAME)
 
-
 ##
 
 import optuna
 from catboost import CatBoostRegressor, Pool
 from sklearn.model_selection import train_test_split
+
+# BEST_CATBOOST_PARAMS = {'depth': 5,
+#                         'learning_rate': 0.11292956428752265,
+#                         'l2_leaf_reg': 17.43840587120914,
+#                         'model_size_reg': 2.4988982836088725,
+#                         'border_count': 64,
+#                         'subsample': 0.6622965490826499,
+#                         'rsm': 0.8392252548382597,
+#                         'leaf_estimation_iterations': 4,
+#                         'iterations': 889,
+#                         'od_wait': 60}
+
+BEST_CATBOOST_PARAMS = {'iterations': 889, 'learning_rate': 0.11292956428752265, 'depth': 5,
+                        'l2_leaf_reg': 17.43840587120914, 'model_size_reg': 2.4988982836088725,
+                        'rsm': 0.8392252548382597, 'loss_function': 'MultiRMSE', 'border_count': 64, 'od_wait': 60,
+                        'od_type': 'Iter', 'leaf_estimation_iterations': 4, 'random_seed': 42,
+                        'use_best_model': False,
+                        'verbose': False, 'eval_metric': 'MultiRMSE', 'task_type': 'CPU', 'bootstrap_type': 'Bernoulli',
+                        'subsample': 0.6622965490826499}
 
 
 def tune_catboost_small(X, y, n_trials=30, random_state=42):
@@ -121,10 +138,23 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
     return final, study.best_value, study.best_params
 
 
+optimized_model.get_params()
+
 optimized_model, valid_multi_rmse, optimized_params = tune_catboost_small(X, y, n_trials=30, random_state=42)
 
+X_tr, X_va, y_tr, y_va = train_test_split(X, y, test_size=0.2, random_state=random_state)
+
+model = CatBoostRegressor(
+    # loss_function="MultiRMSE",
+    # eval_metric="MultiRMSE",
+    # random_seed=42,
+    **BEST_CATBOOST_PARAMS,
+    # use_best_model=False,
+    # verbose=False
+)
+
 meta_arima = MetaARIMA(
-    model=optimized_model,
+    model=model,
     freq=freq_str,
     season_length=freq_int,
     n_trials=N_TRIALS,

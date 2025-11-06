@@ -12,7 +12,7 @@ from statsforecast.models import AutoARIMA
 
 from src.meta.arima._data_reader import ModelIO
 
-FILENAME = 'assets/trained_metaarima_m4m_lgbm.joblib.gz'
+FILENAME = 'assets/trained_metaarima_m4m.joblib.gz'
 # FILENAME = 'assets/trained_metaarima_m4m_cb.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 # meta_arima.n_trials = 60
@@ -48,7 +48,7 @@ for uid in uids:
     df_uid_tr = m3_train.query(f'unique_id=="{uid}"').reset_index(drop=True)
     df_uid_ts = m3_test.query(f'unique_id=="{uid}"').reset_index(drop=True)
 
-    meta_arima.fit_model(df_uid_tr, freq=freq)
+    meta_arima.fit(df_uid_tr, freq=freq, seas_length=12)
 
     fcst_ma = meta_arima.predict(h=horizon)
     fcst_aa_uid = fcst_aa.query(f'unique_id=="{uid}"')

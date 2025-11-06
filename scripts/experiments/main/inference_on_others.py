@@ -14,8 +14,8 @@ from statsforecast.models import (AutoARIMA,
 from src.meta.arima._data_reader import ModelIO
 from src.chronos_data import ChronosDataset
 
-FILENAME = 'assets/trained_metaarima_m4m_lgbm.joblib.gz'
-# FILENAME = 'assets/trained_metaarima_m4m_cb.joblib.gz'
+# FILENAME = 'assets/trained_metaarima_m4m_lgbm.joblib.gz'
+FILENAME = 'assets/trained_metaarima_m4m.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
 target = 'monash_m1_monthly'
@@ -74,5 +74,26 @@ for uid in uids:
 results_df = pd.concat(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
+
+# MetaARIMA        0.877224
+# AutoARIMA        0.915749
+# AutoETS          0.905512
+# AutoTheta        0.922575
+# AR               1.517272
+# MA               2.158437
+# ARMA             1.348792
+# ARIMA            1.262156
+# SeasonalNaive    1.123282
+# dtype: float64
+# MetaARIMA        0.688092
+# AutoARIMA        0.725732
+# AutoETS          0.736851
+# AutoTheta        0.743395
+# AR               1.256297
+# MA               1.722612
+# ARMA             1.131343
+# ARIMA            1.026950
+# SeasonalNaive    0.993393
+# dtype: float64
 
 results_df.to_csv(f'assets/results/main/{target}.csv', index=False)

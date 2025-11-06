@@ -35,7 +35,9 @@ class MetaARIMA:
         self.quantile_thr = quantile_thr
         self.model_names = None
         self.freq = freq
+        self.freq_inference = freq
         self.season_length = season_length
+        self.season_length_inference = season_length
         self.model = None
         self.corr_mat = None
         self.corr_mat_values = None
@@ -111,12 +113,21 @@ class MetaARIMA:
         return meta_preds_list
 
     def fit(self, df: pd.DataFrame, freq: str, seas_length: int):
-        self.freq = freq
-        self.season_length = seas_length
+        self.freq_inference = freq
+        self.season_length_inference = seas_length
 
-        feat_df = tsfeatures_uid(df, self.season_length)
+        feat_df = tsfeatures_uid(df, self.season_length_inference)
 
         config_space = self.meta_predict(feat_df)[0]
+        print('config_space')
+        print(config_space)
+        if self.season_length_inference != self.season_length:
+            config_space = [
+                s.replace(f'[{self.season_length}]', f'[{self.season_length_inference}]')
+                for s in config_space
+            ]
+
+        print(config_space)
 
         self._fit_on_configs(df, config_space)
 
@@ -127,8 +138,8 @@ class MetaARIMA:
         assert self.is_fit
 
         base_params = {'config_space': config_space,
-                       'freq': self.freq,
-                       'season_length': self.season_length}
+                       'freq': self.freq_inference,
+                       'season_length': self.season_length_inference}
 
         if self.base_optim == 'complete':
             self.model = _MetaARIMABase(**base_params)
