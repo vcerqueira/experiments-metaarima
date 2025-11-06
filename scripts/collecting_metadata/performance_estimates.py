@@ -64,7 +64,7 @@ def process_series(
         return None
 
     fcst = sf.predict(h=horizon)
-    fcst = fcst.merge(outsample, on=["unique_id", "ds"])
+    fcst = fcst.merge(outsample, on=["unique_id", "ds"], how='left')
     logging.info(f"Forecast completed for series: {uid}")
 
     err_df = evaluate(df=fcst,

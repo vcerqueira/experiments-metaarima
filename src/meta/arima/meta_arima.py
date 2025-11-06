@@ -110,7 +110,20 @@ class MetaARIMA:
 
         return meta_preds_list
 
-    def fit(self, df: pd.DataFrame, config_space: List[str]):
+    def fit(self, df: pd.DataFrame, freq: str, seas_length: int):
+        self.freq = freq
+        self.season_length = seas_length
+
+        feat_df = tsfeatures_uid(df, self.season_length)
+
+        config_space = self.meta_predict(feat_df)[0]
+
+        self._fit_on_configs(df, config_space)
+
+    def predict(self, h: int, level: Optional[List] = None):
+        return self.model.predict(h, level=level)
+
+    def _fit_on_configs(self, df: pd.DataFrame, config_space: List[str]):
         assert self.is_fit
 
         base_params = {'config_space': config_space,
@@ -187,17 +200,6 @@ class MetaARIMA:
             remaining_mask[next_best_idx] = False
 
         return selected_indices
-
-    def fit_model(self, df: pd.DataFrame, freq: int):
-
-        feat_df = tsfeatures_uid(df, freq)
-
-        config_space = self.meta_predict(feat_df)[0]
-
-        self.fit(df, config_space)
-
-    def predict(self, h: int, level: Optional[List] = None):
-        return self.model.predict(h, level=level)
 
     @staticmethod
     def _check_params(quantile_thr, mmr_lambda):

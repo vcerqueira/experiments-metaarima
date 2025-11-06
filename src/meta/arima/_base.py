@@ -8,7 +8,6 @@ from scipy import stats
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import jarque_bera
 from statsforecast.models import ARIMA
-from statsforecast.utils import ConformalIntervals
 from statsforecast import StatsForecast
 from tsfeatures import (acf_features, arch_stat, crossing_points,
                         entropy, flat_spots, heterogeneity,
