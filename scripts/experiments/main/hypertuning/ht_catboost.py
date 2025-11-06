@@ -10,7 +10,7 @@ from src.meta.arima._data_reader import MetadataReader
 from src.chronos_data import ChronosDataset
 from src.config import QUANTILE_THR, PCA_N_COMPONENTS
 
-source = 'm4_monthly'
+source = 'm4_quarterly'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
 mdr = MetadataReader(group=source, freq_int=freq_int)
@@ -19,16 +19,6 @@ X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
 y = y.apply(lambda x: (x <= x.quantile(QUANTILE_THR)).astype(int), axis=1)
 pca = PCA(n_components=PCA_N_COMPONENTS)
 y_pca = pca.fit_transform(y)
-
-
-# model = CatBoostRegressor(
-#     loss_function="MultiRMSE",
-#     eval_metric="MultiRMSE",
-#     iterations=300,
-#     depth=3,
-#     learning_rate=0.05,
-#     random_seed=42,
-# )
 
 
 def tune_catboost_small(X, y, n_trials=30, random_state=42):
@@ -50,7 +40,7 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
             "rsm": trial.suggest_float("rsm", 0.6, 0.95),
             "leaf_estimation_iterations": trial.suggest_int("leaf_estimation_iterations", 1, 5),
             "bootstrap_type": "Bernoulli",
-            "iterations": trial.suggest_int("iterations", 100, 1100, step=100),
+            "iterations": trial.suggest_int("iterations", 100, 300),
             "od_type": "Iter",
             "od_wait": trial.suggest_int("od_wait", 20, 80, step=10),
             "use_best_model": False,
@@ -118,20 +108,21 @@ BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
                         'use_best_model': False,
                         'verbose': False}
 
+# Q
 BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-                        'border_count': 64,
+                        'border_count': 32,
                         'depth': 4,
                         'eval_metric': 'MultiRMSE',
-                        'iterations': 1000,
-                        'l2_leaf_reg': 44.766640345162486,
-                        'leaf_estimation_iterations': 3,
-                        'learning_rate': 0.05542045515461307,
+                        'iterations': 266,
+                        'l2_leaf_reg': 6.032217388079633,
+                        'leaf_estimation_iterations': 2,
+                        'learning_rate': 0.05961229266653637,
                         'loss_function': 'MultiRMSE',
-                        'model_size_reg': 2.490479898592805,
+                        'model_size_reg': 0.6153682157721689,
                         'od_type': 'Iter',
-                        'od_wait': 50,
+                        'od_wait': 20,
                         'random_seed': 42,
-                        'rsm': 0.8036450022637952,
+                        'rsm': 0.6992272121986959,
                         'task_type': 'CPU',
                         'use_best_model': False,
                         'verbose': False}
