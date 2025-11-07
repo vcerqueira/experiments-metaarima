@@ -4,7 +4,7 @@ from tsfeatures import tsfeatures
 
 from src.chronos_data import ChronosDataset
 
-GROUP = 'm4_monthly'
+GROUP = 'm4_yearly'
 
 df, horizon, n_lags, _, seas_len = ChronosDataset.load_everything(GROUP)
 

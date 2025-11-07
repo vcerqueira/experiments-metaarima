@@ -114,6 +114,19 @@ class ChronosDataset:
 
         df = cls.load_data(group=group, split=split, min_n_instances=min_n_instances)
 
+        if df['ds'].dtype == 'O':
+            try:
+                df['ds'] = pd.to_datetime(df['ds'])
+            except pd.errors.OutOfBoundsDatetime:
+                df['ds'] = pd.to_datetime(df['ds'], errors='coerce', format="%Y-%m-%dT%H:%M:%S.%f")
+                if df['ds'].isna().any():
+                    df['ds'] = (
+                        df['ds']
+                        .astype(str)
+                        .str.slice(0, 10)
+                    )
+                    df['ds'] = pd.to_datetime(df['ds'], errors='coerce', format="%Y-%m-%d")
+
         freq = cls.FREQUENCY_MAP_DATASETS.get(group)
 
         if group.startswith('m4'):

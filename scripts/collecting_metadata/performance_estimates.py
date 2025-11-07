@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
+from pprint import pprint
 
 import pandas as pd
 from statsforecast import StatsForecast
@@ -17,9 +18,9 @@ from src.chronos_data import ChronosDataset
 
 warnings.filterwarnings("ignore")
 
-GROUP = 'm4_monthly'
+# GROUP = 'm4_monthly'
 # GROUP = 'm4_quarterly'
-# GROUP = 'm4_yearly'
+GROUP = 'm4_yearly'
 
 df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP)
 
