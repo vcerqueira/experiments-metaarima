@@ -30,7 +30,9 @@ class MetadataReader:
         self.group = group
         self.freq_int = freq_int
 
-    def read(self, from_dev_set: bool = False, fill_na_value: Optional[float] = -1):
+    def read(self, from_dev_set: bool = False,
+             fill_na_value: Optional[float] = -1,
+             max_config: Optional = None):
         """ Read the data from the features and metadata cv files.
         Args:
             from_dev_set: whether to use data that excludes the test set or not. Defaults to False (no test leakage)
@@ -56,7 +58,9 @@ class MetadataReader:
 
         cv = cv.merge(feats, on=[self.id_col]).set_index(self.id_col)
         self.input_variables = feats.set_index(self.id_col).columns.tolist()
-        self.model_names = MetaARIMAUtils.get_models_sf(season_length=self.freq_int, return_names=True)
+        self.model_names = MetaARIMAUtils.get_models_sf(season_length=self.freq_int,
+                                                        max_config=max_config,
+                                                        return_names=True)
 
         X = cv.loc[:, self.input_variables]
         if fill_na_value is not None:

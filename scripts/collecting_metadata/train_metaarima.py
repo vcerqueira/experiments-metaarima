@@ -11,16 +11,21 @@ from src.config import (MMR,
                         QUANTILE_THR,
                         BASE_OPTIM,
                         LAMBDA,
-                        PCA_N_COMPONENTS)
+                        PCA_N_COMPONENTS,
+                        ORDER_MAX,
+                        ORDER_MAX_NONSEASONAL)
 
 # -- train metamodel
 algorithm = 'catboost'
-source = 'm4_quarterly'
+source = 'm4_yearly'
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
+ord = ORDER_MAX if freq_int > 1 else ORDER_MAX_NONSEASONAL
+pca_n = PCA_N_COMPONENTS if freq_int > 1 else 25
+
 mdr = MetadataReader(group=source, freq_int=freq_int)
-X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
+X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 
 # BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
 #                         'border_count': 32,
@@ -41,6 +46,7 @@ X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
 #                         'verbose': False}
 
 
+# quarterly
 BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
                         'border_count': 32,
                         'depth': 4,
@@ -83,7 +89,7 @@ meta_arima = MetaARIMA(model=model,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
                        quantile_thr=QUANTILE_THR,
-                       pca_n_components=PCA_N_COMPONENTS,
+                       pca_n_components=pca_n,
                        use_mmr=MMR,
                        base_optim=BASE_OPTIM,
                        mmr_lambda=LAMBDA)
