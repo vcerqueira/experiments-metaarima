@@ -6,33 +6,7 @@ import numpy as np
 import pandas as pd
 import plotnine as p9
 
-from src.meta.arima._data_reader import MetadataReader
-
 RESULTS_DIR = 'assets/results/main'
-
-APPROACH_COLORS = [
-    '#2c3e50',  # Dark slate blue
-    '#34558b',  # Royal blue
-    '#4b7be5',  # Bright blue
-    '#6db1bf',  # Light teal
-    '#bf9b7a',  # Warm tan
-    '#d17f5e',  # Warm coral
-    '#c44536',  # Burnt orange red
-    '#8b1e3f',  # Deep burgundy
-    '#472d54',  # Deep purple
-    '#855988',  # Muted mauve
-    '#2d5447',  # Forest green
-    '#507e6d'  # Sage green
-]
-
-DATASET_PAIRS = [
-    ('M3', 'Quarterly'),
-    ('Tourism', 'Monthly'),
-    ('Tourism', 'Quarterly'),
-    ('M3', 'Monthly'),
-    ('M4', 'Monthly'),
-    ('M4', 'Quarterly')
-]
 
 THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
         p9.theme(plot_margin=.025,
@@ -46,28 +20,22 @@ THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
                  legend_title=p9.element_blank())
 
 
-def read_results(file_path: str = RESULTS_DIR, read_len: bool = False) -> pd.DataFrame:
+def read_results(file_path: str = RESULTS_DIR) -> pd.DataFrame:
+    results_list = os.listdir(file_path)
+
     all_results = []
-    for data_name, group in DATASET_PAIRS:
-        print(data_name, group)
-        # if read_len:
-        #     if group == 'Quarterly':
-        #         continue
+    for f in results_list:
+        print(f)
+        df = pd.read_csv(f'{file_path}/{f}')
+        ds = f.split('.csv')[0]
+        freq = ds.split('_')[-1]
 
-        results_df_ = pd.read_csv(f'{file_path}/{data_name},{group}.csv')
-        results_df_['Dataset'] = f'{data_name}-{group[0]}' if data_name != 'Tourism' else f'T-{group[0]}'
+        df['Dataset'] = ds
+        df['Frequency'] = freq
 
-        if read_len:
-            freq_int = 12 if group == 'Monthly' else 4
-
-            mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
-            X, y, _, _, cv = mdr.read(fill_na_value=-1)
-            results_df_ = X.reset_index()[['unique_id', 'series_length']].merge(results_df_, on='unique_id')
-
-        all_results.append(results_df_)
+        all_results.append(df)
 
     df = pd.concat(all_results, ignore_index=True)
-    df = df.drop(columns=['unique_id'])
 
     return df
 
