@@ -1,4 +1,4 @@
-from xgboost import XGBRFRegressor
+from xgboost import XGBRFRegressor, XGBRFClassifier
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from sklearn.multioutput import MultiOutputRegressor
@@ -47,20 +47,39 @@ X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 
 
 # quarterly
+# BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
+#                         'border_count': 32,
+#                         'depth': 4,
+#                         'eval_metric': 'MultiRMSE',
+#                         'iterations': 266,
+#                         'l2_leaf_reg': 6.032217388079633,
+#                         'leaf_estimation_iterations': 2,
+#                         'learning_rate': 0.05961229266653637,
+#                         'loss_function': 'MultiRMSE',
+#                         'model_size_reg': 0.6153682157721689,
+#                         'od_type': 'Iter',
+#                         'od_wait': 20,
+#                         'random_seed': 42,
+#                         'rsm': 0.6992272121986959,
+#                         'task_type': 'CPU',
+#                         'use_best_model': False,
+#                         'verbose': False}
+
+# y
 BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-                        'border_count': 32,
+                        'border_count': 64,
                         'depth': 4,
                         'eval_metric': 'MultiRMSE',
-                        'iterations': 266,
-                        'l2_leaf_reg': 6.032217388079633,
+                        'iterations': 300,
+                        'l2_leaf_reg': 5.903373826675397,
                         'leaf_estimation_iterations': 2,
-                        'learning_rate': 0.05961229266653637,
+                        'learning_rate': 0.05544986984539306,
                         'loss_function': 'MultiRMSE',
-                        'model_size_reg': 0.6153682157721689,
+                        'model_size_reg': 1.5546708502742612,
                         'od_type': 'Iter',
-                        'od_wait': 20,
+                        'od_wait': 70,
                         'random_seed': 42,
-                        'rsm': 0.6992272121986959,
+                        'rsm': 0.8381786985397336,
                         'task_type': 'CPU',
                         'use_best_model': False,
                         'verbose': False}
@@ -81,6 +100,7 @@ BEST_RF_PARAMS = {'colsample_bynode': 0.8018423785145038,
 
 # model = MultiOutputRegressor(LGBMRegressor(**BEST_LGBM_PARAMS))
 model = CatBoostRegressor(**BEST_CATBOOST_PARAMS)
+# model = XGBRFClassifier()
 # model = XGBRFRegressor()
 # model = XGBRFRegressor(**BEST_RF_PARAMS)
 
@@ -89,6 +109,8 @@ meta_arima = MetaARIMA(model=model,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
                        quantile_thr=QUANTILE_THR,
+                       # meta_regression=True,
+                       # target_pca=False,
                        pca_n_components=pca_n,
                        use_mmr=MMR,
                        base_optim=BASE_OPTIM,

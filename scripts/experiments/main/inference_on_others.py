@@ -14,13 +14,13 @@ from statsforecast.models import (AutoARIMA,
 from src.meta.arima._data_reader import ModelIO
 from src.chronos_data import ChronosDataset
 
-OVERRIDE_DS = True
+OVERRIDE_DS = False
 algorithm = 'catboost'
-source = 'm4_quarterly'
+source = 'm4_yearly'
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
-target = 'monash_m3_quarterly'
+target = 'monash_m1_yearly'
 # target = 'monash_hospital'
 df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
 train, test = ChronosDataset.time_wise_split(df, horizon)
@@ -65,7 +65,6 @@ for uid in uids:
     if OVERRIDE_DS:
         fcst_ma['ds'] = df_uid_ts['ds'].values
         fcst_aa['ds'] = df_uid_ts['ds'].values
-
 
     uid_test = df_uid_ts.merge(fcst_ma, on=['unique_id', 'ds'])
     uid_test = uid_test.merge(fcst_aa, on=['unique_id', 'ds'])

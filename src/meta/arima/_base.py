@@ -27,6 +27,9 @@ FEATURE_ORDER = ['hurst', 'series_length', 'unitroot_pp', 'unitroot_kpss', 'hw_a
                  'garch_r2', 'flat_spots', 'entropy', 'crossing_points', 'arch_lm', 'x_acf1', 'x_acf10', 'diff1_acf1',
                  'diff1_acf10', 'diff2_acf1', 'diff2_acf10', 'seas_acf1']
 
+SEAS_FEATURES = ['seasonal_strength', 'peak', 'trough', 'seas_pacf', 'seas_acf1']
+FEATURE_ORDER_NON_SEAS = [x for x in FEATURE_ORDER if x not in SEAS_FEATURES]
+
 
 class _MetaARIMABase:
 
@@ -382,7 +385,17 @@ def tsfeatures_uid(uid_df: pd.DataFrame,
         **acf_features(x, freq),
     }
 
-    feats_series = pd.Series(feats)[FEATURE_ORDER]
+    feats_series = pd.Series(feats)
+
+    # for f in FEATURE_ORDER:
+    #     if f not in feats_series.index:
+    #         feats_series[f] = np.NaN
+
+    if freq > 1:
+        feats_series = feats_series[FEATURE_ORDER]
+    else:
+        # feats_series = feats_series[FEATURE_ORDER]
+        feats_series = feats_series[FEATURE_ORDER_NON_SEAS]
 
     feats_df = pd.DataFrame(feats_series).T.fillna(-1)
     feats_df.index = [uid_df[id_col].values[0]]

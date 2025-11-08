@@ -5,20 +5,25 @@ from catboost import CatBoostRegressor, Pool
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 
-from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
 from src.chronos_data import ChronosDataset
-from src.config import QUANTILE_THR, PCA_N_COMPONENTS
+from src.config import (QUANTILE_THR,
+                        PCA_N_COMPONENTS,
+                        ORDER_MAX,
+                        ORDER_MAX_NONSEASONAL)
 
-source = 'm4_quarterly'
+source = 'm4_yearly'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
+ord = ORDER_MAX if freq_int > 1 else ORDER_MAX_NONSEASONAL
 mdr = MetadataReader(group=source, freq_int=freq_int)
-X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
+X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 
-y = y.apply(lambda x: (x <= x.quantile(QUANTILE_THR)).astype(int), axis=1)
-pca = PCA(n_components=PCA_N_COMPONENTS)
-y_pca = pca.fit_transform(y)
+y_bin = y.apply(lambda x: (x <= x.quantile(QUANTILE_THR)).astype(int), axis=1)
+
+
+# pca = PCA(n_components=PCA_N_COMPONENTS)
+# y_pca = pca.fit_transform(y_bin)
 
 
 def tune_catboost_small(X, y, n_trials=30, random_state=42):
@@ -84,12 +89,13 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
     return final, study.best_params
 
 
-opt_model, best_params = tune_catboost_small(X, y_pca,
+opt_model, best_params = tune_catboost_small(X, y,
                                              n_trials=50,
                                              random_state=42)
 
 pprint(opt_model.get_params())
 
+# M
 BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
                         'border_count': 32,
                         'depth': 4,
@@ -123,6 +129,25 @@ BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
                         'od_wait': 20,
                         'random_seed': 42,
                         'rsm': 0.6992272121986959,
+                        'task_type': 'CPU',
+                        'use_best_model': False,
+                        'verbose': False}
+
+# y
+BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
+                        'border_count': 64,
+                        'depth': 4,
+                        'eval_metric': 'MultiRMSE',
+                        'iterations': 300,
+                        'l2_leaf_reg': 5.903373826675397,
+                        'leaf_estimation_iterations': 2,
+                        'learning_rate': 0.05544986984539306,
+                        'loss_function': 'MultiRMSE',
+                        'model_size_reg': 1.5546708502742612,
+                        'od_type': 'Iter',
+                        'od_wait': 70,
+                        'random_seed': 42,
+                        'rsm': 0.8381786985397336,
                         'task_type': 'CPU',
                         'use_best_model': False,
                         'verbose': False}
