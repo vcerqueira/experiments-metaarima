@@ -20,7 +20,7 @@ source = 'm4_yearly'
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
-target = 'monash_m1_yearly'
+target = 'monash_tourism_yearly'
 # target = 'monash_hospital'
 df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
 train, test = ChronosDataset.time_wise_split(df, horizon)

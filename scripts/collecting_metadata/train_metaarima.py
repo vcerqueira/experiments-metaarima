@@ -22,7 +22,7 @@ FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
 ord = ORDER_MAX if freq_int > 1 else ORDER_MAX_NONSEASONAL
-pca_n = PCA_N_COMPONENTS if freq_int > 1 else 25
+pca_n = PCA_N_COMPONENTS if freq_int > 1 else 10
 
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
@@ -108,7 +108,9 @@ meta_arima = MetaARIMA(model=model,
                        freq=freq_str,
                        season_length=freq_int,
                        n_trials=N_TRIALS,
+                       # n_trials=int(N_TRIALS/2),
                        quantile_thr=QUANTILE_THR,
+                       # quantile_thr=.2,
                        # meta_regression=True,
                        # target_pca=False,
                        pca_n_components=pca_n,
