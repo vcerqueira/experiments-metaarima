@@ -1,3 +1,4 @@
+import copy
 import warnings
 from typing import Optional, List, Dict, Union, Tuple
 from math import log
@@ -7,7 +8,7 @@ import pandas as pd
 from scipy import stats
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import jarque_bera
-from statsforecast.models import ARIMA
+from statsforecast.models import ARIMA, MSTL
 from statsforecast import StatsForecast
 from tsfeatures import (acf_features, arch_stat, crossing_points,
                         entropy, flat_spots, heterogeneity,
@@ -122,7 +123,6 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
 
         sf_subset.fit(df=df_subset)
 
-        # Get AICc scores
         results = []
         for i, model_idx in enumerate(model_indices):
             aicc = sf_subset.fitted_[0][i].model_['aicc']
@@ -163,6 +163,9 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
                 break
 
         best_idx = remaining_indices[0]
+
+        # test mstl
+
         self.sf = StatsForecast(models=[self.models[best_idx]], freq=self.freq)
         self.sf.fit(df=df)
         self.tot_nobs += df.shape[0]
@@ -401,3 +404,58 @@ def tsfeatures_uid(uid_df: pd.DataFrame,
     feats_df.index = [uid_df[id_col].values[0]]
 
     return feats_df
+
+
+class MSTLTestUtils:
+    SEASONALITIES_BY_FREQ = {
+        'M': [4, 12],
+    }
+
+    @classmethod
+    def test_mstl_on_config(cls, df: pd.DataFrame, config_inst, freq: str, max_samples: Optional[int] = None):
+        seas_l = cls.SEASONALITIES_BY_FREQ[freq]
+        config_inst_ = copy.deepcopy(config_inst)
+
+        df_ = df.copy()
+        if max_samples is not None:
+            df_ = df.tail(max_samples)
+
+        models = [MSTL(season_length=seas_l, trend_forecaster=config_inst_),
+                  config_inst_]
+
+        sf_proxy = StatsForecast(models=models, freq=freq)
+
+        sf_proxy.fit(df_)
+
+        k_arima = cls.k_from_sf_arma(sf_proxy.fitted_[0][1].model_['arma'])
+
+        sf_proxy.forecast(h=1, fitted=True)
+        fitted_vals = sf_proxy.forecast_fitted_values()
+        resid_arima = fitted_vals['y'] - fitted_vals['ARIMA']
+        resid_mstl = fitted_vals['y'] - fitted_vals['MSTL']
+
+        aicc_arima = cls.compute_aicc_from_resids(resid_arima, k_arima)
+        aicc_mstl = cls.compute_aicc_from_resids(resid_mstl, k_arima + 1)
+
+        use_mstl = aicc_mstl < aicc_arima
+
+        return use_mstl
+
+    @staticmethod
+    def compute_aicc_from_resids(resid: pd.Series, k):
+        n = len(resid)
+        # resid = fitted_vals['y']-fitted_vals['MSTL']
+        ssr = np.sum(resid ** 2)
+        sigma_hat_sq = ssr / n
+
+        log_l_approx_term = n * np.log(sigma_hat_sq)
+
+        penalty_term = 2 * k * (k + 1) / (n - k - 1)
+        aicc = log_l_approx_term + 2 * k + penalty_term
+
+        return aicc
+
+    @staticmethod
+    def k_from_sf_arma(arma):
+        # k_arima = np.sum(sf.fitted_[0][1].model_['arma'][:4]) + 1
+        return np.sum(arma[:4]) + 1
