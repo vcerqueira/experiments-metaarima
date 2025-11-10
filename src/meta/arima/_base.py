@@ -68,6 +68,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
                  config_space: List[str],
                  season_length: int,
                  freq: str,
+                 eval_mstl: bool = False,
                  eta: float = 2,
                  resource_factor: float = 2,
                  init_resource_factor: int = 4,
@@ -96,6 +97,7 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
         self.min_configs = min_configs
         self.init_resource_factor = init_resource_factor
         self.tot_nobs = 0
+        self.eval_mstl = eval_mstl
 
     def _evaluate_models(self, df: pd.DataFrame, model_indices: List[int], sample_size: int) -> List[Tuple[int, float]]:
         """
@@ -164,12 +166,26 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
 
         best_idx = remaining_indices[0]
 
-        # test mstl
+        if self.eval_mstl:
+            use_mstl = MSTLTestUtils.test_mstl_on_config(df=df,
+                                                         config_inst=self.models[best_idx],
+                                                         freq=self.freq)
 
-        self.sf = StatsForecast(models=[self.models[best_idx]], freq=self.freq)
-        self.sf.fit(df=df)
-        self.tot_nobs += df.shape[0]
-        self.sf.fitted_[0][0].alias = self.alias
+            if use_mstl:
+                models = [MSTL(season_length=self.season_length, trend_forecaster=self.models[best_idx])]
+
+                self.sf = StatsForecast(models=models, freq=self.freq)
+            else:
+                self.sf = StatsForecast(models=[self.models[best_idx]], freq=self.freq)
+
+            self.sf.fit(df=df)
+            self.sf.fitted_[0][0].alias = self.alias
+            self.tot_nobs += df.shape[0] * 3
+        else:
+            self.sf = StatsForecast(models=[self.models[best_idx]], freq=self.freq)
+            self.sf.fit(df=df)
+            self.tot_nobs += df.shape[0]
+            self.sf.fitted_[0][0].alias = self.alias
 
 
 class _MetaARIMABaseMC:
@@ -408,11 +424,20 @@ def tsfeatures_uid(uid_df: pd.DataFrame,
 
 class MSTLTestUtils:
     SEASONALITIES_BY_FREQ = {
+        's': [60, 3600],
+        'min': [60, 1440],
+        '30T': [48, 336],
+        'H': [24, 168],
+        'D': [7, 365],
         'M': [4, 12],
+        'ME': [4, 12],
+        'MS': [4, 12],
     }
 
     @classmethod
     def test_mstl_on_config(cls, df: pd.DataFrame, config_inst, freq: str, max_samples: Optional[int] = None):
+        assert freq in cls.SEASONALITIES_BY_FREQ, 'Unknown frequency. Check class'
+
         seas_l = cls.SEASONALITIES_BY_FREQ[freq]
         config_inst_ = copy.deepcopy(config_inst)
 
