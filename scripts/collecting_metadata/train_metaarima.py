@@ -17,7 +17,7 @@ from src.config import (MMR,
 
 # -- train metamodel
 algorithm = 'catboost'
-source = 'm4_yearly'
+source = 'm4_monthly'
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
@@ -27,24 +27,24 @@ pca_n = PCA_N_COMPONENTS if freq_int > 1 else 10
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 
-# BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-#                         'border_count': 32,
-#                         'depth': 4,
-#                         'eval_metric': 'MultiRMSE',
-#                         'iterations': 283,
-#                         'l2_leaf_reg': 16.732679992180078,
-#                         'leaf_estimation_iterations': 2,
-#                         'learning_rate': 0.04248616344796388,
-#                         'loss_function': 'MultiRMSE',
-#                         'model_size_reg': 2.0916597401644705,
-#                         'od_type': 'Iter',
-#                         'od_wait': 60,
-#                         'random_seed': 42,
-#                         'rsm': 0.6406208143252348,
-#                         'task_type': 'CPU',
-#                         'use_best_model': False,
-#                         'verbose': False}
-
+# month
+BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
+                        'border_count': 32,
+                        'depth': 4,
+                        'eval_metric': 'MultiRMSE',
+                        'iterations': 283,
+                        'l2_leaf_reg': 16.732679992180078,
+                        'leaf_estimation_iterations': 2,
+                        'learning_rate': 0.04248616344796388,
+                        'loss_function': 'MultiRMSE',
+                        'model_size_reg': 2.0916597401644705,
+                        'od_type': 'Iter',
+                        'od_wait': 60,
+                        'random_seed': 42,
+                        'rsm': 0.6406208143252348,
+                        'task_type': 'CPU',
+                        'use_best_model': False,
+                        'verbose': False}
 
 # quarterly
 # BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
@@ -66,23 +66,23 @@ X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 #                         'verbose': False}
 
 # y
-BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-                        'border_count': 64,
-                        'depth': 4,
-                        'eval_metric': 'MultiRMSE',
-                        'iterations': 300,
-                        'l2_leaf_reg': 5.903373826675397,
-                        'leaf_estimation_iterations': 2,
-                        'learning_rate': 0.05544986984539306,
-                        'loss_function': 'MultiRMSE',
-                        'model_size_reg': 1.5546708502742612,
-                        'od_type': 'Iter',
-                        'od_wait': 70,
-                        'random_seed': 42,
-                        'rsm': 0.8381786985397336,
-                        'task_type': 'CPU',
-                        'use_best_model': False,
-                        'verbose': False}
+# BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
+#                         'border_count': 64,
+#                         'depth': 4,
+#                         'eval_metric': 'MultiRMSE',
+#                         'iterations': 300,
+#                         'l2_leaf_reg': 5.903373826675397,
+#                         'leaf_estimation_iterations': 2,
+#                         'learning_rate': 0.05544986984539306,
+#                         'loss_function': 'MultiRMSE',
+#                         'model_size_reg': 1.5546708502742612,
+#                         'od_type': 'Iter',
+#                         'od_wait': 70,
+#                         'random_seed': 42,
+#                         'rsm': 0.8381786985397336,
+#                         'task_type': 'CPU',
+#                         'use_best_model': False,
+#                         'verbose': False}
 
 BEST_LGBM_PARAMS = {'colsample_bytree': 0.954674147279825,
                     'learning_rate': 0.08217295211648731,

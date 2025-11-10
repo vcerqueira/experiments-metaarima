@@ -25,6 +25,7 @@ class MetaARIMA:
                  n_trials: int,
                  meta_regression: bool = False,
                  target_pca: bool = True,
+                 eval_mstl: bool=False,
                  pca_n_components: int = 100,
                  base_optim: str = 'halving',
                  quantile_thr: float = 0.5,
@@ -42,6 +43,7 @@ class MetaARIMA:
         self.corr_mat = None
         self.corr_mat_values = None
         self.target_pca = target_pca
+        self.eval_mstl = eval_mstl
         self.pca_n_components = pca_n_components
         self.use_mmr = use_mmr
         self.mmr_lambda = mmr_lambda
@@ -146,6 +148,7 @@ class MetaARIMA:
         elif self.base_optim == 'halving':
             # todo hardcoded params2...
             self.model = _HalvingMetaARIMABase(**base_params,
+                                               eval_mstl=self.eval_mstl,
                                                eta=2,
                                                init_resource_factor=5,
                                                resource_factor=2)
@@ -153,9 +156,13 @@ class MetaARIMA:
             raise ValueError(f'Unknown base optimizer: {self.base_optim}')
 
         self.model.fit(df)
-        self.selected_config = MetaARIMAUtils.get_model_order(self.model.sf.fitted_[0][0].model_,
-                                                              as_alias=True,
-                                                              alias_freq=self.season_length)
+        try:
+            self.selected_config = MetaARIMAUtils.get_model_order(self.model.sf.fitted_[0][0].model_,
+                                                                  as_alias=True,
+                                                                  alias_freq=self.season_length)
+        except KeyError:
+            # todo can get that from halving cls
+            self.selected_config = 'MSTL'
 
     def _mmr_selection(self, probs: np.ndarray):
         """ Re-rank configurations based on maximal marginal relevance

@@ -172,7 +172,11 @@ class _HalvingMetaARIMABase(_MetaARIMABase):
                                                          freq=self.freq)
 
             if use_mstl:
-                models = [MSTL(season_length=self.season_length, trend_forecaster=self.models[best_idx])]
+                trend_arima = ARIMA(order=self.models[best_idx].order,
+                                    season_length=1,
+                                    seasonal_order=(0, 0, 0))
+
+                models = [MSTL(season_length=self.season_length, trend_forecaster=trend_arima)]
 
                 self.sf = StatsForecast(models=models, freq=self.freq)
             else:
@@ -445,7 +449,11 @@ class MSTLTestUtils:
         if max_samples is not None:
             df_ = df.tail(max_samples)
 
-        models = [MSTL(season_length=seas_l, trend_forecaster=config_inst_),
+        trend_arima = ARIMA(order=config_inst_.order,
+                            season_length=1,
+                            seasonal_order=(0, 0, 0))
+
+        models = [MSTL(season_length=seas_l, trend_forecaster=trend_arima),
                   config_inst_]
 
         sf_proxy = StatsForecast(models=models, freq=freq)
@@ -456,6 +464,13 @@ class MSTLTestUtils:
 
         sf_proxy.forecast(h=1, fitted=True)
         fitted_vals = sf_proxy.forecast_fitted_values()
+
+        column_mapping = {col: 'ARIMA' for col in fitted_vals.columns
+                          if col.startswith('ARIMA')
+                          }
+
+        fitted_vals = fitted_vals.rename(columns=column_mapping)
+
         resid_arima = fitted_vals['y'] - fitted_vals['ARIMA']
         resid_mstl = fitted_vals['y'] - fitted_vals['MSTL']
 
