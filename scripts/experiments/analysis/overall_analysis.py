@@ -8,26 +8,30 @@ from src.utils import to_latex_tab, THEME, read_results
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-TRUNCATE_DIST = False
+TRUNCATE_DIST = True
 
 df = read_results()
-df_mt = df.drop(columns=['Dataset','Frequency','unique_id']).melt()
+df_mt = df.drop(columns=['Dataset', 'Frequency', 'unique_id']).melt()
 
 avg_score = df_mt.groupby('variable', observed=False)['value'].mean().reset_index()
-sorted_vars = avg_score.sort_values('value', ascending=False)['variable'].tolist()
-df_mt['variable'] = pd.Categorical(df_mt['variable'], categories=sorted_vars, ordered=True)
+med_score = df_mt.groupby('variable', observed=False)['value'].median().reset_index()
+sorted_vars = avg_score.sort_values('value', ascending=True)['variable'].tolist()
+df_mt['variable'] = pd.Categorical(df_mt['variable'], categories=sorted_vars)
+avg_score['variable'] = pd.Categorical(avg_score['variable'], categories=sorted_vars)
+med_score['variable'] = pd.Categorical(med_score['variable'], categories=sorted_vars)
 
 # aes_ = {'x': 1, 'y': 'np.log(value+1)'}
 aes_ = {'x': 1, 'y': 'value'}
 
-df_mt_blp2 = df_mt.query('value<0.2')
+df_mt_blp2 = df_mt.query('value<4')
+df_mt_blp2['variable'] = pd.Categorical(df_mt_blp2['variable'], categories=sorted_vars)
 
 if TRUNCATE_DIST:
     plot = p9.ggplot(df_mt_blp2, p9.aes(**aes_))
-    plot_name = 'assets/results/plots/smape_distr_violins_trunc.pdf'
+    plot_name = 'assets/results/plots/mase_distr_violins_trunc.pdf'
 else:
     plot = p9.ggplot(df_mt, p9.aes(**aes_))
-    plot_name = 'assets/results/plots/smape_distr_violins.pdf'
+    plot_name = 'assets/results/plots/mase_distr_violins.pdf'
 
 plot = plot + \
        THEME + \
@@ -45,8 +49,12 @@ plot = plot + \
                      mapping=p9.aes(yintercept='value'),
                      colour='orangered',
                      size=1.3) + \
+       p9.geom_hline(data=med_score,
+                     mapping=p9.aes(yintercept='value'),
+                     colour='blue',
+                     size=1.3) + \
        p9.xlab('') + \
-       p9.ylab('SMAPE')
+       p9.ylab('MASE')
 
 plot.save(plot_name, width=12, height=5)
 
@@ -64,4 +72,6 @@ print(avg_by_ds_tab)
 med_by_ds_tab = to_latex_tab(med_by_ds, 4, rotate_cols=True)
 print(med_by_ds_tab)
 
-# todo win rates
+
+
+# df[sorted_vars].apply(lambda x: x.rank()==1.0, axis=1).astype(int).mean()
