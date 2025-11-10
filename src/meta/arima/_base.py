@@ -383,6 +383,7 @@ class MetaARIMAUtils:
 
 def tsfeatures_uid(uid_df: pd.DataFrame,
                    freq: int,
+                   impute_seas: bool=False,
                    target_col: str = 'y',
                    id_col: str = 'unique_id'):
     x_r = uid_df[target_col].values
@@ -410,15 +411,17 @@ def tsfeatures_uid(uid_df: pd.DataFrame,
 
     feats_series = pd.Series(feats)
 
-    # for f in FEATURE_ORDER:
-    #     if f not in feats_series.index:
-    #         feats_series[f] = np.NaN
+    if impute_seas:
+        for f in FEATURE_ORDER:
+            if f not in feats_series.index:
+                feats_series[f] = np.NaN
 
-    if freq > 1:
         feats_series = feats_series[FEATURE_ORDER]
     else:
-        # feats_series = feats_series[FEATURE_ORDER]
-        feats_series = feats_series[FEATURE_ORDER_NON_SEAS]
+        if freq > 1:
+            feats_series = feats_series[FEATURE_ORDER]
+        else:
+            feats_series = feats_series[FEATURE_ORDER_NON_SEAS]
 
     feats_df = pd.DataFrame(feats_series).T.fillna(-1)
     feats_df.index = [uid_df[id_col].values[0]]

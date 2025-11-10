@@ -118,7 +118,9 @@ class MetaARIMA:
         self.freq_inference = freq
         self.season_length_inference = seas_length
 
-        feat_df = tsfeatures_uid(df, self.season_length_inference)
+        seas_fill = seas_length == 1 and self.season_length > 1
+
+        feat_df = tsfeatures_uid(df, freq=self.season_length_inference, impute_seas=seas_fill)
 
         config_space = self.meta_predict(feat_df)[0]
 
