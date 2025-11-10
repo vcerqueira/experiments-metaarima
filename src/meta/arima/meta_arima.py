@@ -25,7 +25,7 @@ class MetaARIMA:
                  n_trials: int,
                  meta_regression: bool = False,
                  target_pca: bool = True,
-                 eval_mstl: bool=False,
+                 eval_mstl: bool = False,
                  pca_n_components: int = 100,
                  base_optim: str = 'halving',
                  quantile_thr: float = 0.5,

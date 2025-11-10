@@ -1,98 +1,82 @@
+import copy
 from pprint import pprint
+from copy import deepcopy
+
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import KFold
-from xgboost import XGBRFRegressor
 
-from src.meta.arima._data_reader import MetadataReader
-from src.meta.arima.meta_arima import MetaARIMA
-from src.load_data.config import DATASETS
-from src.config import (N_TRIALS_SPACE,
-                        MAX_N_TRIALS,
-                        QUANTILE_THR,
-                        LAMBDA,
-                        MMR,
-                        BASE_OPTIM,
-                        N_FOLDS,
-                        RANDOM_SEED)
+from utilsforecast.losses import mase
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
 
-data_name, group = 'M3', 'Monthly'
-# data_name, group = 'Tourism', 'Monthly'
-print(data_name, group)
-data_loader = DATASETS[data_name]
+from src.meta.arima._data_reader import ModelIO
+from src.chronos_data import ChronosDataset
+from src.config import N_TRIALS_SPACE
 
-df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, extended=True)
+OVERRIDE_DS = False
+algorithm = 'catboost'
+source = 'm4_monthly'
+FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
+meta_arima = ModelIO.load_model(FILENAME)
 
-train, _ = data_loader.train_test_split(df, horizon=horizon)
+target = 'monash_m3_monthly'
+# target = 'monash_hospital'
+df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
+train, test = ChronosDataset.time_wise_split(df, horizon)
 
-mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
+sf_models = [AutoARIMA(season_length=seas_len)]
 
-X_dev, y_dev, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
-X, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
-print(cv_test.shape)
+uids = train['unique_id'].unique().tolist()
 
-kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
+meta_arima_d = {}
+for n_trials_ in N_TRIALS_SPACE:
+    print('n_trials_:', n_trials_)
+    m_a = copy.deepcopy(meta_arima)
+
+    m_a.n_trials = n_trials_
+
+    meta_arima_d[f'MetaARIMA({n_trials_})'] = m_a
+
+model_names = [*meta_arima_d] + ['AutoARIMA']
 
 results = []
-for j, (train_index, test_index) in enumerate(kfcv.split(X)):
-    print(f"Fold {j}:")
-    print(f"  Train: index={train_index}")
-    print(f"  Test:  index={test_index}")
+for uid in uids:
+    print(uid)
 
-    X_train = X_dev.iloc[train_index, :]
-    y_train = y_dev.iloc[train_index, :]
-    X_test = X.iloc[test_index, :]
+    df_uid_tr = train.query(f'unique_id=="{uid}"').reset_index(drop=True)
+    df_uid_ts = test.query(f'unique_id=="{uid}"').reset_index(drop=True)
 
-    mod = XGBRFRegressor()
+    meta_arima_fcst = {}
+    for ma_k, ma_v in meta_arima_d.items():
+        # print(ma_k)
+        ma_v.fit(df_uid_tr, freq=freq, seas_length=seas_len)
 
-    print('MetaARIMA fitting')
-    meta_arima = MetaARIMA(model=mod,
-                           freq=freq_str,
-                           season_length=freq_int,
-                           n_trials=MAX_N_TRIALS,
-                           quantile_thr=QUANTILE_THR,
-                           base_optim=BASE_OPTIM,
-                           use_mmr=MMR,
-                           mmr_lambda=LAMBDA)
+        fcst_ma_ = ma_v.predict(h=horizon)
 
-    meta_arima.meta_fit(X_train, y_train)
+        meta_arima_fcst[ma_k] = fcst_ma_['MetaARIMA'].values
 
-    print('MetaARIMA inference')
-    n_trials_preds = {}
-    for n_trials_ in N_TRIALS_SPACE:
-        print('N TRIALS', n_trials_)
-        meta_arima.n_trials = n_trials_
+    fcst_meta_arima = pd.DataFrame(meta_arima_fcst)
 
-        n_trials_preds[n_trials_] = meta_arima.meta_predict(X_test)
+    sf = StatsForecast(models=deepcopy(sf_models), freq=freq)
+    sf.fit(df_uid_tr)
 
-    print('MetaARIMA evaluating')
-    for i, (uid, x) in enumerate(X_test.iterrows()):
-        print(i, uid)
-        df_uid = train.query(f'unique_id=="{uid}"')
+    fcst_aa = sf.forecast(h=horizon).reset_index()
+    fcst_meta_arima['ds'] = fcst_aa['ds']
+    fcst_meta_arima['unique_id'] = fcst_aa['unique_id']
 
-        scores = {}
-        for n_trials_ in n_trials_preds:
-            uid_list = n_trials_preds[n_trials_]
+    uid_test = df_uid_ts.merge(fcst_meta_arima, on=['unique_id', 'ds'])
+    uid_test = uid_test.merge(fcst_aa, on=['unique_id', 'ds'])
 
-            try:
-                meta_arima.fit(df_uid, config_space=uid_list[i])
-            except ValueError:
-                scores[f'MetaARIMA({n_trials_})'] = np.nan
-                continue
+    err = mase(df=uid_test, models=model_names, seasonality=seas_len, train_df=df_uid_tr)
 
-            err_meta_mmr = cv_test.loc[uid, meta_arima.selected_config]
+    pprint(err)
 
-            scores[f'MetaARIMA({n_trials_})'] = err_meta_mmr
+    results.append(err)
+    results_df = pd.concat(results)
+    print(results_df.mean(numeric_only=True))
+    print(results_df.median(numeric_only=True))
 
-        scores['unique_id'] = f'{data_name},{group},{uid}'
-        scores['AutoARIMA'] = cv_test.loc[uid, 'score_AutoARIMA']
-
-        pprint(scores)
-
-        results.append(scores)
-
-results_df = pd.DataFrame(results)
-
-results_df.to_csv(f'assets/results/sensitivity/ntrials,{data_name},{group}.csv', index=False)
-
+results_df = pd.concat(results)
 print(results_df.mean(numeric_only=True))
+print(results_df.median(numeric_only=True))
+
+results_df.to_csv(f'assets/results/main/ntrials,{target}.csv', index=False)
