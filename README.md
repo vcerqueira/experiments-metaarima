@@ -9,29 +9,16 @@ first, run scripts/metadata_collection
 
 second, run scripts/experiments/metalearning to build and test the metaearning model
 
-## baselines and benchmarks
+## todo
 
-- AutoARIMA (statsforecast)
-- AutoARIMA2 (confined search)
-- ARIMA(2,1,2) 
-- ARIMA(1,0,0)
-- Seasonal Naive
-- Theta
-- ETS
-- MetaARIMA
-
-side analysis
-- MetaARIMA @ varying quantile values
-- MetaARIMA @ varying lambda values
-- MetaARIMA @ n trials
-
-ablation
-- MetaARIMA no mmr
-- MetaARIMA mc
-- MetaARIMA no successive halving
-- MetaARIMA no classifier chain (multioutput)
-- MetaARIMA no classifier chain (native multioutput)
-
+- re.-implementar ablation
+  - opt catboost class
+- sens yearly
+- efficiency refactor
+- redo analysis
+- write paper
+- +gifteval
+- prod @ metaforecast
 
 # contributions
 

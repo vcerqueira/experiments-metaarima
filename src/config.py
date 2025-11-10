@@ -14,8 +14,8 @@ N_TRIALS = 25
 MAX_N_TRIALS = 94
 N_LAMBDAS = 11
 LAMBDA_SPACE = np.linspace(start=0, stop=1, num=N_LAMBDAS)
-QUANTILE_SPACE = np.linspace(start=0.025, stop=.95, num=38)
-N_FOLDS = 5
+QUANTILE_SPACE = np.linspace(start=0.05, stop=.95, num=13)
+# N_FOLDS = 5
 
 BEST_CATBOOST_PARAMS = {
     'm4_monthly': {'bootstrap_type': 'Bernoulli',

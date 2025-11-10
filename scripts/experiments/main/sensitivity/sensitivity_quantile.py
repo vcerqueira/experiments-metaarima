@@ -1,90 +1,103 @@
-import pandas as pd
+import copy
+from pprint import pprint
+
 import numpy as np
-from sklearn.model_selection import KFold
-from xgboost import XGBRFRegressor
+import pandas as pd
+from catboost import CatBoostRegressor
+from utilsforecast.losses import mase
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
 
 from src.meta.arima.meta_arima import MetaARIMA
 from src.meta.arima._data_reader import MetadataReader
-from src.load_data.config import DATASETS
-from src.config import (QUANTILE_SPACE,
-                        LAMBDA,
+from src.chronos_data import ChronosDataset
+from src.config import (MMR,
                         N_TRIALS,
-                        MMR,
                         BASE_OPTIM,
-                        N_FOLDS,
-                        RANDOM_SEED)
+                        LAMBDA,
+                        QUANTILE_SPACE,
+                        PCA_N_COMPONENTS,
+                        ORDER_MAX,
+                        BEST_CATBOOST_PARAMS)
 
-data_name, group = 'M3', 'Monthly'
-# data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Tourism', 'Monthly'
-# data_name, group = 'Tourism', 'Quarterly'
-# data_name, group = 'M4', 'Monthly'
-# data_name, group = 'M4', 'Weekly'
-print(data_name, group)
-data_loader = DATASETS[data_name]
+# -- train metamodel
+algorithm = 'catboost'
+source = 'm4_monthly'
+FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
+_, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
-df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, extended=True)
+mdr = MetadataReader(group=source, freq_int=freq_int)
+X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ORDER_MAX)
 
-train, _ = data_loader.train_test_split(df, horizon=horizon)
+model = CatBoostRegressor(**BEST_CATBOOST_PARAMS[source])
 
-mdr = MetadataReader(dataset_name=data_name, group=group, freq_int=freq_int)
+meta_arima_d = {}
+for qtl in QUANTILE_SPACE:
+    print('qtl:', qtl)
+    meta_arima_ = MetaARIMA(model=model,
+                            freq=freq_str,
+                            season_length=freq_int,
+                            n_trials=N_TRIALS,
+                            quantile_thr=qtl,
+                            pca_n_components=PCA_N_COMPONENTS,
+                            use_mmr=MMR,
+                            base_optim=BASE_OPTIM,
+                            mmr_lambda=LAMBDA)
 
-X_dev, y_dev, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1)
-X, _, _, _, cv_test = mdr.read(from_dev_set=False, fill_na_value=-1)
-print(cv_test.shape)
+    meta_arima_.meta_fit(X, y)
 
-quantile_results = {}
-for quantile_ in QUANTILE_SPACE:
-    print('QUANTILE', quantile_)
+    meta_arima_d[f'MetaARIMA({np.round(qtl, 2)})'] = meta_arima_
 
-    kfcv = KFold(n_splits=N_FOLDS, random_state=RANDOM_SEED, shuffle=True)
+model_names = [*meta_arima_d] + ['AutoARIMA']
 
-    results = []
-    for j, (train_index, test_index) in enumerate(kfcv.split(X)):
-        print(f"Fold {j}:")
-        print(f"  Train: index={train_index}")
-        print(f"  Test:  index={test_index}")
+target = 'monash_m3_monthly'
+# target = 'monash_hospital'
+df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
+train, test = ChronosDataset.time_wise_split(df, horizon)
 
-        X_train = X_dev.iloc[train_index, :]
-        y_train = y_dev.iloc[train_index, :]
-        X_test = X.iloc[test_index, :]
+sf_models = [AutoARIMA(season_length=seas_len)]
 
-        mod = XGBRFRegressor()
+uids = train['unique_id'].unique().tolist()
 
-        meta_arima = MetaARIMA(model=mod,
-                               freq=freq_str,
-                               season_length=freq_int,
-                               n_trials=N_TRIALS,
-                               base_optim=BASE_OPTIM,
-                               quantile_thr=quantile_,
-                               use_mmr=MMR,
-                               mmr_lambda=LAMBDA)
+results = []
+for uid in uids:
+    print(uid)
 
-        meta_arima.meta_fit(X_train, y_train)
+    df_uid_tr = train.query(f'unique_id=="{uid}"').reset_index(drop=True)
+    df_uid_ts = test.query(f'unique_id=="{uid}"').reset_index(drop=True)
 
-        print('MetaARIMA inference')
-        pred_list = meta_arima.meta_predict(X_test)
+    meta_arima_fcst = {}
+    for ma_k, ma_v in meta_arima_d.items():
+        # print(ma_k)
+        ma_v.fit(df_uid_tr, freq=freq, seas_length=seas_len)
 
-        print('MetaARIMA evaluating')
-        for i, (uid, x) in enumerate(X_test.iterrows()):
-            print(i, uid)
-            df_uid = train.query(f'unique_id=="{uid}"')
+        fcst_ma_ = ma_v.predict(h=horizon)
 
-            try:
-                meta_arima.fit(df_uid, config_space=pred_list[i])
-            except ValueError:
-                continue
+        meta_arima_fcst[ma_k] = fcst_ma_['MetaARIMA'].values
 
-            err_metaarima = cv_test.loc[uid, meta_arima.selected_config]
+    fcst_meta_arima = pd.DataFrame(meta_arima_fcst)
 
-            results.append(err_metaarima)
+    sf = StatsForecast(models=copy.deepcopy(sf_models), freq=freq)
+    sf.fit(df_uid_tr)
 
-    quantile_results[f'MetaARIMA({str(quantile_)})'] = {'avg': np.mean(results),
-                                                        'med': np.median(results),
-                                                        'std': np.std(results)
-                                                        }
+    fcst_aa = sf.forecast(h=horizon).reset_index()
+    fcst_meta_arima['ds'] = fcst_aa['ds']
+    fcst_meta_arima['unique_id'] = fcst_aa['unique_id']
 
-results_df = pd.DataFrame(quantile_results).T
-results_df.to_csv(f'assets/results/sensitivity/quantile,{data_name},{group}.csv')
+    uid_test = df_uid_ts.merge(fcst_meta_arima, on=['unique_id', 'ds'])
+    uid_test = uid_test.merge(fcst_aa, on=['unique_id', 'ds'])
 
-print(results_df)
+    err = mase(df=uid_test, models=model_names, seasonality=seas_len, train_df=df_uid_tr)
+
+    pprint(err)
+
+    results.append(err)
+    results_df = pd.concat(results)
+    print(results_df.mean(numeric_only=True))
+    print(results_df.median(numeric_only=True))
+
+results_df = pd.concat(results)
+print(results_df.mean(numeric_only=True))
+print(results_df.median(numeric_only=True))
+
+results_df.to_csv(f'assets/results/main/quantile,{target}.csv', index=False)
