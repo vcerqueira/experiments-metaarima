@@ -478,7 +478,7 @@ class MSTLTestUtils:
         resid_mstl = fitted_vals['y'] - fitted_vals['MSTL']
 
         aicc_arima = cls.compute_aicc_from_resids(resid_arima, k_arima)
-        aicc_mstl = cls.compute_aicc_from_resids(resid_mstl, k_arima + 1)
+        aicc_mstl = cls.compute_aicc_from_resids(resid_mstl, k_arima + 2)
 
         use_mstl = aicc_mstl < aicc_arima
 

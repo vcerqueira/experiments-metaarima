@@ -15,12 +15,12 @@ from src.config import (MMR,
 
 # -- train metamodel
 algorithm = 'catboost'
-source = 'm4_monthly'
+source = 'm4_yearly'
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
 ord = ORDER_MAX if freq_int > 1 else ORDER_MAX_NONSEASONAL
-pca_n = PCA_N_COMPONENTS if freq_int > 1 else 10
+pca_n = PCA_N_COMPONENTS if freq_int > 1 else 15
 
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
