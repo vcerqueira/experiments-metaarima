@@ -29,3 +29,5 @@ for uid in uids:
 
 print('metaarima tot:', tot_obs_metaarima)
 print('autoarima tot:', tot_obs_autoarima)
+# metaarima tot: 5529661
+# autoarima tot: 14140044
