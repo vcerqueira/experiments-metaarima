@@ -16,7 +16,4 @@ second, run scripts/experiments/metalearning to build and test the metaearning m
 - gifteval
 - prod @ metaforecast
 
-# contributions
-
-l
 
