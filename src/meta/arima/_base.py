@@ -258,8 +258,11 @@ class _MetaARIMABaseMC:
         self.models = MetaARIMAUtils.get_models_sf(season_length=self.season_length, alias_list=config_space)
         self.sf = StatsForecast(models=self.models, freq=self.freq)
 
-    def predict(self, h: int):
-        return self.sf.predict(h=h)
+    def predict(self, h: int, level: Optional[List]):
+        if level is not None:
+            return self.sf.predict(h=h, level=level)
+        else:
+            return self.sf.predict(h=h)
 
 
 class MetaARIMAUtils:
@@ -383,7 +386,7 @@ class MetaARIMAUtils:
 
 def tsfeatures_uid(uid_df: pd.DataFrame,
                    freq: int,
-                   impute_seas: bool=False,
+                   impute_seas: bool = False,
                    target_col: str = 'y',
                    id_col: str = 'unique_id'):
     x_r = uid_df[target_col].values

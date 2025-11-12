@@ -11,23 +11,12 @@ second, run scripts/experiments/metalearning to build and test the metaearning m
 
 ## todo
 
-- run quantile and other sens analysis
-- re.-implementar ablation
-  - opt catboost class
-- efficiency refactor
 - redo analysis
 - write paper
-- +gifteval
+- gifteval
 - prod @ metaforecast
 
 # contributions
 
-- metaarima
-  - multi-label dataset where target contains the top percentile of configurations
-    - modeled using a classifier chain
-    - predictors are based on features, tsfeatures
-  - mmr re-ranking to improve diversity of selected configurations
-- metadataset
-- experiments and package
-
+l
 
