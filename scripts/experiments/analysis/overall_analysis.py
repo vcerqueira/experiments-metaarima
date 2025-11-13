@@ -59,11 +59,11 @@ plot = plot + \
 plot.save(plot_name, width=12, height=5)
 
 avg_by_ds = df.groupby(['Dataset']).mean(numeric_only=True).round(4)
-avg_by_ds.loc['Avg.', :] = avg_by_ds.mean().values
+# avg_by_ds.loc['Avg.', :] = avg_by_ds.mean().values
 avg_by_ds.loc['Avg. Rank', :] = avg_by_ds.rank(axis=1).mean().round(2).values
 
 med_by_ds = df.groupby(['Dataset']).median(numeric_only=True).round(4)
-med_by_ds.loc['Avg.', :] = med_by_ds.mean().values
+# med_by_ds.loc['Avg.', :] = med_by_ds.mean().values
 med_by_ds.loc['Avg. Rank', :] = med_by_ds.rank(axis=1).mean().round(2).values
 
 avg_by_ds_tab = to_latex_tab(avg_by_ds, 4, rotate_cols=True)
@@ -71,7 +71,5 @@ print(avg_by_ds_tab)
 
 med_by_ds_tab = to_latex_tab(med_by_ds, 4, rotate_cols=True)
 print(med_by_ds_tab)
-
-
 
 # df[sorted_vars].apply(lambda x: x.rank()==1.0, axis=1).astype(int).mean()

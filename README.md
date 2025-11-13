@@ -11,7 +11,6 @@ second, run scripts/experiments/metalearning to build and test the metaearning m
 
 ## todo
 
-- redo analysis
 - write paper
 - gifteval
 - prod @ metaforecast

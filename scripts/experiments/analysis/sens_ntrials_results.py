@@ -5,14 +5,14 @@ from src.utils import THEME
 
 PLOT_NAME = 'assets/results/plots/ntrials_scores.pdf'
 
-results_df = pd.read_csv('assets/results/sensitivity/ntrials,M3,Monthly.csv')
+results_df = pd.read_csv('assets/results/sensitivity/ntrials,monash_m3_monthly.csv')
 
-avg_scores = results_df.median(numeric_only=True)
+avg_scores = results_df.mean(numeric_only=True)
 
 meta_arima_mask = avg_scores.index.str.contains('MetaARIMA')
 df_meta = pd.DataFrame({
     'ntrials': avg_scores.index[meta_arima_mask].str.extract(r'\((.*?)\)')[0].astype(float),
-    'SMAPE': avg_scores[meta_arima_mask].values
+    'MASE': avg_scores[meta_arima_mask].values
 })
 df_meta['ntrials'] = df_meta['ntrials'].astype(float)  # Remove categorical to allow line plot
 
@@ -20,7 +20,7 @@ auto_arima_scr = pd.Series({'AutoARIMA': avg_scores[avg_scores.index == 'AutoARI
 auto_arima_scr = auto_arima_scr.reset_index()
 auto_arima_scr.columns = ['AutoARIMA', 'value']
 
-plot = p9.ggplot(df_meta, p9.aes(**{'x': 'ntrials', 'y': 'SMAPE'})) + \
+plot = p9.ggplot(df_meta, p9.aes(**{'x': 'ntrials', 'y': 'MASE'})) + \
        THEME + \
        p9.theme(plot_margin=0.015,
                 axis_text_y=p9.element_text(size=12),
@@ -36,6 +36,6 @@ plot = p9.ggplot(df_meta, p9.aes(**{'x': 'ntrials', 'y': 'SMAPE'})) + \
                      size=1.3) + \
        p9.scale_x_continuous(breaks=range(0, int(df_meta['ntrials'].max()) + 10, 10)) + \
        p9.xlab('Number of trials') + \
-       p9.ylab('SMAPE')
+       p9.ylab('MASE')
 
 plot.save(PLOT_NAME, width=12, height=3.5)

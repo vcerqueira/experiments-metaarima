@@ -5,15 +5,21 @@ from src.utils import THEME
 
 PLOT_NAME = 'assets/results/plots/ncomps_scores.pdf'
 
-results_df = pd.read_csv('assets/results/sensitivity/ncomps,M3,Monthly.csv', index_col='ncomps')
+results_df = pd.read_csv('assets/results/sensitivity/ncomps,monash_m3_monthly.csv')
 
-meta_arima_mask = results_df.index.str.contains('MetaARIMA')
+avg_scores = results_df.mean(numeric_only=True)
+
+meta_arima_mask = avg_scores.index.str.contains('MetaARIMA')
 df_meta = pd.DataFrame({
-    'ncomps': results_df.index[meta_arima_mask].str.extract(r'\((.*?)\)')[0].astype(float),
-    'SMAPE': results_df['avg'].values
+    'ncomps': avg_scores.index[meta_arima_mask].str.extract(r'\((.*?)\)')[0].astype(int),
+    'MASE': avg_scores[meta_arima_mask].values
 })
 
-plot = p9.ggplot(df_meta, p9.aes(**{'x': 'ncomps', 'y': 'SMAPE'})) + \
+auto_arima_scr = pd.Series({'AutoARIMA': avg_scores[avg_scores.index == 'AutoARIMA'].iloc[0]})
+auto_arima_scr = auto_arima_scr.reset_index()
+auto_arima_scr.columns = ['AutoARIMA', 'value']
+
+plot = p9.ggplot(df_meta, p9.aes(**{'x': 'ncomps', 'y': 'MASE'})) + \
        THEME + \
        p9.theme(plot_margin=0.015,
                 axis_text_y=p9.element_text(size=12),
@@ -23,7 +29,11 @@ plot = p9.ggplot(df_meta, p9.aes(**{'x': 'ncomps', 'y': 'SMAPE'})) + \
                 strip_text=p9.element_text(size=13)) + \
        p9.geom_point() + \
        p9.geom_line(group=1) + \
+       p9.geom_hline(data=auto_arima_scr,
+                     mapping=p9.aes(yintercept='value'),
+                     colour='orangered',
+                     size=1.3) + \
        p9.xlab('Number of PC') + \
-       p9.ylab('SMAPE')
+       p9.ylab('MASE')
 
 plot.save(PLOT_NAME, width=12, height=3.5)

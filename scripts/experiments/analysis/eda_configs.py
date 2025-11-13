@@ -8,7 +8,7 @@ from src.utils import THEME
 
 K = 25
 
-mdr = MetadataReader(dataset_name='M4', group='Monthly', freq_int=12)
+mdr = MetadataReader(group='m4_monthly', freq_int=12)
 X, y, _, _, cv = mdr.read(fill_na_value=-1)
 
 cv_cols = cv.columns.tolist()
@@ -44,7 +44,7 @@ plot = p9.ggplot(config_ranks_mt, p9.aes(**{'x': 'variable',
                 legend_position=None) + \
        p9.geom_boxplot(show_legend=False) + \
        p9.xlab('') + \
-       p9.ylab('SMAPE Rank')
+       p9.ylab('MASE Rank')
 
 plot_name = 'assets/results/plots/config_rank_dist.pdf'
 
