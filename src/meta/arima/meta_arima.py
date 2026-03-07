@@ -1,0 +1,231 @@
+import warnings
+import copy
+from typing import List, Optional
+
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+from src.meta.arima.multilabel_pca import MultiLabelPCARegressor
+from src.meta.arima._base import (MetaARIMAUtils,
+                                  _MetaARIMABase,
+                                  _HalvingMetaARIMABase,
+                                  _MetaARIMABaseMC,
+                                  tsfeatures_uid)
+
+warnings.filterwarnings(action='ignore')
+
+
+class MetaARIMA:
+    BASE_OPTIM_METHODS = ['complete', 'mc', 'halving']
+
+    def __init__(self,
+                 model,
+                 freq: str,
+                 season_length: int,
+                 n_trials: int,
+                 meta_regression: bool = False,
+                 target_pca: bool = True,
+                 eval_mstl: bool = False,
+                 pca_n_components: int = 100,
+                 base_optim: str = 'halving',
+                 quantile_thr: float = 0.5,
+                 mmr_lambda: float = 0.75,
+                 use_mmr: bool = True):
+
+        self.n_trials = n_trials
+        self.quantile_thr = quantile_thr
+        self.model_names = None
+        self.freq = freq
+        self.freq_inference = freq
+        self.season_length = season_length
+        self.season_length_inference = season_length
+        self.model = None
+        self.corr_mat = None
+        self.corr_mat_values = None
+        self.target_pca = target_pca
+        self.eval_mstl = eval_mstl
+        self.pca_n_components = pca_n_components
+        self.use_mmr = use_mmr
+        self.mmr_lambda = mmr_lambda
+        self.base_optim = base_optim
+        self.meta_regression = meta_regression
+        self.selected_config = ''
+        if self.target_pca:
+            self.meta_model = copy.deepcopy(MultiLabelPCARegressor(mod=model, n_components=self.pca_n_components))
+        else:
+            self.meta_model = copy.deepcopy(model)
+
+        self.is_fit: bool = False
+
+        assert self.base_optim in self.BASE_OPTIM_METHODS
+
+    def meta_fit(self, X: pd.DataFrame, Y: pd.DataFrame):
+        """
+
+        :param X: feature set
+        :param Y: error scores
+        :return:
+        """
+        self.model_names = Y.columns.tolist()
+
+        y = Y.apply(lambda x: (x <= x.quantile(self.quantile_thr)).astype(int), axis=1)
+        if self.use_mmr:
+            self.corr_mat = Y.corr(method='kendall')
+            self.corr_mat_values = self.corr_mat.values
+
+        if self.meta_regression:
+            self.meta_model.fit(X, Y, process_y=True)
+        else:
+            self.meta_model.fit(X, y)
+
+        self.is_fit = True
+
+    def meta_predict(self, X):
+        assert self.is_fit
+
+        if self.meta_regression:
+            meta_preds = self.meta_model.predict(X)
+        else:
+            meta_preds = self.meta_model.predict_proba(X)
+
+        if isinstance(meta_preds, list):
+            meta_preds = np.asarray([x[:, 1] for x in meta_preds]).T
+
+        if self.meta_regression:
+            min_vals = meta_preds.min(axis=1, keepdims=True)
+            max_vals = meta_preds.max(axis=1, keepdims=True)
+            meta_preds = 1 - (meta_preds - min_vals) / (max_vals - min_vals)
+
+        if self.use_mmr:
+            meta_preds = [pd.Series(x, index=self.model_names) for x in meta_preds]
+
+            meta_preds_list = []
+            for i, meta_pred in enumerate(meta_preds):
+                selected_indices = self._mmr_selection(probs=meta_pred.values)
+
+                mod_list = meta_pred.index[selected_indices].tolist()
+
+                meta_preds_list.append(mod_list)
+        else:
+            preds = pd.DataFrame(meta_preds, columns=self.model_names)
+
+            # Rank configurations by descending score (higher is better) when MMR is disabled
+            meta_preds_list = preds.apply(
+                lambda x: x.sort_values(ascending=False).index[:self.n_trials].tolist(),
+                axis=1
+            ).values.tolist()
+
+        return meta_preds_list
+
+    def fit(self, df: pd.DataFrame, freq: str, seas_length: int):
+        self.freq_inference = freq
+        self.season_length_inference = seas_length
+
+        seas_fill = seas_length == 1 and self.season_length > 1
+
+        feat_df = tsfeatures_uid(df, freq=self.season_length_inference, impute_seas=seas_fill)
+
+        config_space = self.meta_predict(feat_df)[0]
+
+        if self.season_length_inference != self.season_length:
+            config_space = [
+                s.replace(f'[{self.season_length}]', f'[{self.season_length_inference}]')
+                for s in config_space
+            ]
+
+        self._fit_on_configs(df, config_space)
+
+    def predict(self, h: int, level: Optional[List] = None):
+        return self.model.predict(h, level=level)
+
+    def _fit_on_configs(self, df: pd.DataFrame, config_space: List[str]):
+        assert self.is_fit
+
+        base_params = {'config_space': config_space,
+                       'freq': self.freq_inference,
+                       'season_length': self.season_length_inference}
+
+        if self.base_optim == 'complete':
+            self.model = _MetaARIMABase(**base_params)
+        elif self.base_optim == 'mc':
+            # todo hardcoded params1...
+            self.model = _MetaARIMABaseMC(**base_params, n_trials=10, trial_n_obs=0.4)
+        elif self.base_optim == 'halving':
+            # todo hardcoded params2...
+            self.model = _HalvingMetaARIMABase(**base_params,
+                                               eval_mstl=self.eval_mstl,
+                                               eta=2,
+                                               init_resource_factor=5,
+                                               resource_factor=2)
+        else:
+            raise ValueError(f'Unknown base optimizer: {self.base_optim}')
+
+        self.model.fit(df)
+        try:
+            self.selected_config = MetaARIMAUtils.get_model_order(self.model.sf.fitted_[0][0].model_,
+                                                                  as_alias=True,
+                                                                  alias_freq=self.season_length)
+        except KeyError:
+            # todo can get that from halving cls
+            self.selected_config = 'MSTL'
+
+    def _mmr_selection(self, probs: np.ndarray):
+        """Re-rank configurations by maximal marginal relevance (MMR).
+
+        Balances predicted probability (relevance) and diversity (low correlation
+        with already selected configurations). Score = λ * prob - (1-λ) * max_corr:
+        λ=1 uses only probability (no diversity); λ=0 uses only correlation (max diversity).
+
+        Parameters
+        ----------
+        probs : np.ndarray, shape (n_configurations,)
+            Predicted probability that each configuration is in the top quantile.
+
+        Returns
+        -------
+        selected_indices : list
+            Indices of the selected configurations.
+        """
+        n_configs = len(probs)
+
+        selected_indices = []
+        remaining_mask = np.ones(n_configs, dtype=bool)
+
+        best_idx = np.argmax(probs)
+        selected_indices.append(best_idx)
+        remaining_mask[best_idx] = False
+
+        lambda_probs = self.mmr_lambda * probs
+        one_minus_lambda = 1 - self.mmr_lambda
+
+        while len(selected_indices) < self.n_trials and remaining_mask.any():
+            remaining_indices = np.where(remaining_mask)[0]
+
+            if len(remaining_indices) == 0:
+                break
+
+            # Extract correlations for remaining configs with selected configs
+            # Shape: (n_remaining, n_selected)
+            corr_matrix = self.corr_mat_values[np.ix_(remaining_indices, selected_indices)]
+
+            # Get max correlation for each remaining config
+            max_corrs = np.max(corr_matrix, axis=1)
+
+            # MMR score calculation
+            mmr_scores = lambda_probs[remaining_indices] - one_minus_lambda * max_corrs
+
+            best_relative_idx = np.argmax(mmr_scores)
+            next_best_idx = remaining_indices[best_relative_idx]
+
+            selected_indices.append(next_best_idx)
+            remaining_mask[next_best_idx] = False
+
+        return selected_indices
+
+    @staticmethod
+    def _check_params(quantile_thr, mmr_lambda):
+        assert quantile_thr > 0
+        assert quantile_thr < 1
+        assert mmr_lambda >= 0
+        assert mmr_lambda <= 1

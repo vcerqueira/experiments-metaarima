@@ -1,0 +1,41 @@
+import pandas as pd
+import plotnine as p9
+
+from src.utils import THEME
+
+PLOT_NAME = 'assets/results/plots/ablation_scores.pdf'
+
+results_df = pd.read_csv('assets/results/sensitivity/ablation,monash_m3_monthly.csv')
+results_df = results_df.rename(columns={
+    'Meta-Regr': 'No-Binarization',
+    'Reg-Chain': 'Regr. Chain',
+    'MO-Regr': 'Regr. MO',
+    'MonteCarlo': 'Monte Carlo',
+})
+
+# results_df=results_df.loc[results_df['No-SH'] < 5].reset_index(drop=True)
+
+avg_scores = results_df.mean(numeric_only=True).reset_index()
+avg_scores.columns = ['Variant', 'MASE']
+avg_scores['Variant'] = pd.Categorical(avg_scores['Variant'], categories=avg_scores['Variant'])
+
+latex_df = avg_scores.copy()
+latex_df['MASE'] = latex_df['MASE'].round(4).astype(str)
+latex_df = latex_df.set_index('Variant')  # .T
+
+latex_df.columns = [f'\\rotatebox{{85}}{{{x}}}' for x in latex_df.columns]
+latex_table = latex_df.to_latex(caption='CAPTION', label='tab:ablation_scores')
+print(latex_table)
+
+plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'Variant', 'y': 'MASE'})) + \
+       THEME + \
+       p9.theme(plot_margin=0.015,
+                axis_text_y=p9.element_text(size=12),
+                axis_text_x=p9.element_text(size=12, angle=30),
+                legend_title=p9.element_blank(),
+                legend_position=None,
+                strip_text=p9.element_text(size=13)) + \
+       p9.geom_bar(stat='identity', fill='teal') + \
+       p9.labs(x='')
+
+plot.save(PLOT_NAME, width=11, height=4.5)
