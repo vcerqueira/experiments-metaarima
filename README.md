@@ -1,7 +1,6 @@
 # MetaARIMA - Experiments
 
-This repository contains the experiments for the paper "MetaARIMA: Automatic Configuration of ARIMA using Metalearning" 
-(Cerqueira et al., 2025). **MetaARIMA** is a framework for the automatic configuration of ARIMA using metalearning. 
+This repository contains the experiments for the paper "MetaARIMA: Automatic Configuration of ARIMA using Metalearning". **MetaARIMA** is a framework for the automatic configuration of ARIMA using metalearning. 
 MetaARIMA is built on top of the Nixtla ecosystem.
 
 ## MetaARIMA overview
