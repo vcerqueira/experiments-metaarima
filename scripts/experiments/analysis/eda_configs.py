@@ -6,19 +6,15 @@ import plotnine as p9
 from src.meta.arima._data_reader import MetadataReader
 from src.utils import THEME
 
-K = 25
+K = 15
 
 mdr = MetadataReader(group='m4_monthly', freq_int=12)
-X, y, _, _, cv = mdr.read(fill_na_value=-1)
+X, y, _, _, cv = mdr.read(fill_na_value=-1, from_dev_set=True)
 
 cv_cols = cv.columns.tolist()
 x_cols = X.columns.tolist()
 y_cols = y.columns.tolist()
 unique_cv_cols = [col for col in cv_cols if col not in x_cols and col not in y_cols]
-
-# cv[unique_cv_cols]
-# cv[unique_cv_cols].iloc[0]
-# cv.loc[:, cv.columns.str.startswith('coef')].iloc[0]
 
 # boxplot on rank - top K
 
@@ -30,16 +26,19 @@ selected_configs = top_k_configs + bot_k_configs
 selected_config_avg_rank = config_avg_rank[selected_configs].sort_values().index.tolist()
 
 config_ranks_mt = config_ranks[selected_configs].melt()
+selected_config_avg_rank = [re.sub('\[12\]$','', x, ) for x in selected_config_avg_rank]
+config_ranks_mt['variable'] = config_ranks_mt['variable'].apply(lambda x: re.sub('\[12\]$','', x, ))
 config_ranks_mt['variable'] = config_ranks_mt['variable'].str.replace('ARIMA', '')
 config_ranks_mt['variable'] = pd.Categorical(config_ranks_mt['variable'],
                                              categories=[x.replace('ARIMA', '') for x in selected_config_avg_rank])
+
 
 plot = p9.ggplot(config_ranks_mt, p9.aes(**{'x': 'variable',
                                             'y': 'value'})) + \
        THEME + \
        p9.theme(plot_margin=0.015,
-                axis_text_y=p9.element_text(size=12),
-                axis_text_x=p9.element_text(size=12, angle=60),
+                axis_text_y=p9.element_text(size=14),
+                axis_text_x=p9.element_text(size=15, angle=45),
                 legend_title=p9.element_blank(),
                 legend_position=None) + \
        p9.geom_boxplot(show_legend=False) + \
@@ -48,7 +47,7 @@ plot = p9.ggplot(config_ranks_mt, p9.aes(**{'x': 'variable',
 
 plot_name = 'assets/results/plots/config_rank_dist.pdf'
 
-plot.save(plot_name, width=12, height=5)
+plot.save(plot_name, width=15, height=5)
 
 # number of wins p configs
 # (config_ranks == 1).sum().sort_values(ascending=False)[:25]
