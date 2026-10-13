@@ -165,14 +165,8 @@ lightning_logs
 
 
 # Custom
-results.zip
 assets/old/
-assets/cv.csv
-assets/papers/
-assets/paper/
-assets/datasets/m4/
 experiments_extra/
 extra
-scripts/experiments/_dev/
 assets/metadata/*
 catboost_info/
