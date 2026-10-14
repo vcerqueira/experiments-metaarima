@@ -6,9 +6,6 @@
 **Reproducibility package for:**
 > MetaARIMA: Automatic Configuration of ARIMA using Metalearning.
 
-`assets/README_example.md` is a formatting example from another paper. It is not part of this package.
-
-**Everything except the two workflow diagrams is produced by the scripts.** `assets/` ships only `stage1.png` and `stage2.png`. Models, metadata, scores, and plots are written there when you run the commands below. TSFM inference runs on CPU.
 
 ---
 
@@ -34,7 +31,7 @@ Replace the copyright line in `LICENSE` with the author name when you fill this 
 ├── scripts/
 │   ├── collecting_metadata/    # Feature extraction, ARIMA metadata, training
 │   ├── experiments/
-│   │   ├── main/               # Benchmark (main.py) and sensitivity/
+│   │   ├── main/               # Benchmark (main.py), CatBoost search (ht_catboost.py), sensitivity/
 │   │   └── analysis/           # Tables and figures from the CSVs the benchmark writes
 │   └── tsfm/                   # Chronos-2, TimesFM, and Moirai-2 scripts
 ├── assets/
@@ -46,8 +43,7 @@ Replace the copyright line in `LICENSE` with the author name when you fill this 
 │       ├── sensitivity/        # Ablation and sensitivity CSVs
 │       ├── tsfm/               # Foundation-model scores and predictions
 │       └── plots/              # PDFs written by the analysis scripts
-├── requirements.txt            # Core environment, pinned
-├── requirements-tsfm.txt       # Separate CPU environment for the TSFM scripts, pinned
+├── requirements.txt            # Single environment, pinned
 └── README.md
 ```
 
@@ -57,7 +53,7 @@ Run every command below from the repository root. Scripts import `src`, so prefi
 
 ## Computing Environment
 
-| Component | Light check (tables and figures) | Full CPU experiments | TSFM scripts |
+| Component | Analysis scripts | Full CPU experiments | TSFM scripts |
 |---|---|---|---|
 | **OS** | Any | TODO — record the machine used for the paper runs | Any. The committed scores were produced on an NVIDIA GeForce RTX 2050 |
 | **CPU / RAM** | A laptop is enough | TODO — record processor and RAM | A laptop is enough. CPU inference is slower than the original GPU runs |
@@ -65,29 +61,27 @@ Run every command below from the repository root. Scripts import `src`, so prefi
 | **Python** | 3.12 | 3.12 | 3.12 |
 
 **Language:** Python 3.12
-**Package manager:** conda (or any environment that can `pip install` the pinned files)
+**Package manager:** conda (or any environment that can `pip install` the pinned file)
 
-Core packages are pinned in `requirements.txt`:
+Everything, including the TSFM scripts, installs from `requirements.txt`. Moirai-2 (`uni2ts==2.0.0`) requires `numpy~=1.26`, `scipy~=1.11`, `datasets~=2.17`, and `torch<2.5`. Chronos-2 requires `scikit-learn>=1.6` and `torch>=2.2`. The file uses that intersection. The default PyTorch wheel runs on CPU.
 
 | Package | Version | Purpose |
 |---|---|---|
-| `numpy` | 2.4.0 | Numerical computation |
+| `numpy` | 1.26.4 | Numerical computation |
 | `pandas` | 2.2.3 | Data frames |
-| `scikit-learn` | 1.5.2 | PCA and multi-output wrappers |
+| `scikit-learn` | 1.6.1 | PCA and multi-output wrappers |
+| `scipy` | 1.11.4 | Ranking utilities |
 | `statsforecast` | 1.7.8 | ARIMA and statistical baselines |
 | `statsmodels` | 0.15.0 | ARIMA diagnostics |
 | `utilsforecast` | 0.2.11 | MASE |
 | `tsfeatures` | 0.4.5 | Time-series features |
-| `datasets` | 4.4.0 | Hugging Face download |
+| `datasets` | 2.17.1 | Hugging Face download |
+| `pyarrow` | 25.0.1 | Arrow backend for `datasets`. Later PyArrow releases require NumPy 2 |
 | `catboost` | 1.2.8 | Metamodel |
-| `scipy` | 1.15.3 | Ranking utilities |
+| `optuna` | 5.0.0 | CatBoost hyperparameter search |
 | `plotnine` | 0.15.8 | Figures |
-
-The TSFM scripts use a **separate environment** (`requirements-tsfm.txt`). `uni2ts==2.0.0` needs `torch<2.5` and `numpy~=1.26`, which conflicts with `numpy==2.4.0` in the core file. Do not install both files into one environment. The default PyTorch wheel in that file runs on CPU.
-
-| Package | Version | Purpose |
-|---|---|---|
-| `torch` | 2.4.1 | Newest build that satisfies both `uni2ts` (`<2.5`) and `chronos-forecasting` (`>=2.2`) |
+| `matplotlib` | 3.9.2 | Figure backend |
+| `torch` | 2.4.1 | Chronos-2, TimesFM, and Moirai-2 |
 | `chronos-forecasting` | 2.2.2 | Chronos-2 |
 | `uni2ts` | 2.0.0 | Moirai-2 |
 | `transformers` | 4.57.6 | TimesFM |
@@ -96,23 +90,14 @@ The TSFM scripts use a **separate environment** (`requirements-tsfm.txt`). `uni2
 
 ## Installation
 
-### Core environment (light check and CPU experiments)
-
 ```bash
 conda create -n metaarima python=3.12 -y
 conda activate metaarima
 pip install -r requirements.txt
 ```
 
-Generated metadata is read from `assets/metadata`. That directory is created by the collection scripts. No environment file is required.
-
-### TSFM environment
-
-```bash
-conda create -n metaarima-tsfm python=3.12 -y
-conda activate metaarima-tsfm
-pip install -r requirements-tsfm.txt
-```
+Generated metadata is read from `assets/metadata`. 
+That directory is created by the collection scripts. 
 
 ---
 
@@ -164,12 +149,104 @@ Match the saved metamodel to the target frequency:
 
 ## Reproducing the Results
 
-### Tables and figures
+A fresh clone contains the workflow diagrams only. Run the steps below in order from the repository root. They rebuild the metadata, models, scores, and figures.
 
-Run this after the benchmark and sensitivity CSVs exist. These scripts only read those files and write PDFs under `assets/results/plots/`.
+### 1. Dev metadata
+
+Build features and ARIMA scores for each M4 frequency. This is the expensive step: `performance_estimates.py` uses 8 worker processes and one BLAS thread each.
 
 ```bash
-conda activate metaarima
+PYTHONPATH=. python scripts/collecting_metadata/feature_extraction.py --source m4_monthly
+PYTHONPATH=. python scripts/collecting_metadata/performance_estimates.py --source m4_monthly
+PYTHONPATH=. python scripts/collecting_metadata/feature_extraction.py --source m4_quarterly
+PYTHONPATH=. python scripts/collecting_metadata/performance_estimates.py --source m4_quarterly
+PYTHONPATH=. python scripts/collecting_metadata/feature_extraction.py --source m4_yearly
+PYTHONPATH=. python scripts/collecting_metadata/performance_estimates.py --source m4_yearly
+```
+
+### 2. Train the metamodels
+
+`BEST_CATBOOST_PARAMS` in `src/config.py` is the CatBoost configuration used by every later step. Those values come from `scripts/experiments/main/ht_catboost.py`. The search is fixed by seed 42: the 20% holdout uses `random_state` 42, each of the 50 trials fits CatBoost with `random_seed` 42 and `thread_count` 1, and Optuna draws trials one at a time from `TPESampler(seed=42)`. With the same dev metadata, a re-run prints the same parameters.
+
+The script leaves `source` set to `m4_yearly`. Set `source` to `m4_monthly` and `m4_quarterly` and run it again for the other two frequencies. It prints the parameters and does not edit `src/config.py`. After a re-run, replace the matching entry in `BEST_CATBOOST_PARAMS` with that printout. Training, the benchmark, the sensitivity sweeps, and the TSFM scripts all read this dictionary, so downstream results stay on the stored values until the dictionary is updated.
+
+```bash
+PYTHONPATH=. python scripts/experiments/main/ht_catboost.py
+```
+
+Training then uses the dictionary in `src/config.py`:
+
+```bash
+PYTHONPATH=. python scripts/collecting_metadata/train_metaarima.py --source m4_monthly
+PYTHONPATH=. python scripts/collecting_metadata/train_metaarima.py --source m4_quarterly
+PYTHONPATH=. python scripts/collecting_metadata/train_metaarima.py --source m4_yearly
+```
+
+### 3. Benchmark
+
+This step loads the joblib from the previous step, downloads each target from Hugging Face, and does not retrain.
+
+```bash
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_quarterly --target monash_m1_quarterly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_quarterly --target monash_m3_quarterly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_quarterly --target monash_tourism_quarterly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_yearly --target monash_m1_yearly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_yearly --target monash_m3_yearly
+PYTHONPATH=. python scripts/experiments/main/main.py --source m4_yearly --target monash_tourism_yearly
+```
+
+### 4. Sensitivity
+
+The lambda and n-trials sweeps load the saved model and do not read metadata:
+
+```bash
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_monthly --target monash_m1_monthly
+```
+
+Ablation, the quantile sweep, and the component-count sweep retrain and read the metadata from step 1. Use the same frequency pairing:
+
+```bash
+PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_monthly --target monash_m1_monthly
+```
+
+Repeat with `--source` / `--target` pairs from the frequency table. Defaults in each script are the values last left in the file; pass both flags explicitly for a paper dataset.
+
+### 5. Config EDA
+
+Run this after the monthly metadata from step 1 exists:
+
+```bash
+PYTHONPATH=. python scripts/experiments/analysis/eda_configs.py
+```
+
+### 6. TSFM
+
+The scripts run on CPU, in the same environment, and write under `assets/results/tsfm/<model>/`:
+
+```bash
+PYTHONPATH=. python scripts/tsfm/preds_chronos2.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/tsfm/preds_timesfm.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/tsfm/preds_moirai2.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/tsfm/preds_chronos2.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/tsfm/preds_timesfm.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/tsfm/preds_moirai2.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/tsfm/preds_chronos2.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/tsfm/preds_timesfm.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/tsfm/preds_moirai2.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/tsfm/summarize.py
+```
+
+### 7. Tables and figures
+
+These scripts read the CSVs from the steps above and write PDFs under `assets/results/plots/`.
+
+```bash
 PYTHONPATH=. python scripts/experiments/analysis/overall_analysis.py
 PYTHONPATH=. python scripts/experiments/analysis/ablation_results_all.py
 PYTHONPATH=. python scripts/experiments/analysis/sens_lambda_results_all.py
@@ -178,92 +255,15 @@ PYTHONPATH=. python scripts/experiments/analysis/sens_ntrials_results_all.py
 PYTHONPATH=. python scripts/experiments/analysis/sens_ncomps_results_all.py
 ```
 
-`plot_tsfm.py` also needs the Chronos-2 prediction CSV and a download of `monash_m3_monthly`:
+`plot_tsfm.py` also needs the Chronos-2 prediction CSV from step 6 and a download of `monash_m3_monthly`:
 
 ```bash
 PYTHONPATH=. python scripts/experiments/analysis/plot_tsfm.py
 ```
 
-The TSFM score summary reads the score CSVs written by the prediction scripts:
-
-```bash
-PYTHONPATH=. python scripts/tsfm/summarize.py
-```
-
 `sens_lambda_results_all.py` ignores `assets/results/sensitivity/lambda,monash_tourism_monthly,2.csv` (an extra run). The file it uses is `lambda,monash_tourism_monthly.csv`.
 
-### Benchmark from the trained models
-
-This step needs the joblib files from `train_metaarima.py`. It downloads each target from Hugging Face and does not retrain.
-
-```bash
-for target in monash_m1_monthly monash_m3_monthly monash_tourism_monthly; do
-  PYTHONPATH=. python scripts/experiments/main/main.py --source m4_monthly --target "$target"
-done
-for target in monash_m1_quarterly monash_m3_quarterly monash_tourism_quarterly; do
-  PYTHONPATH=. python scripts/experiments/main/main.py --source m4_quarterly --target "$target"
-done
-for target in monash_m1_yearly monash_m3_yearly monash_tourism_yearly; do
-  PYTHONPATH=. python scripts/experiments/main/main.py --source m4_yearly --target "$target"
-done
-```
-
-The lambda and n-trials sweeps are the same kind of run (saved model, no metadata):
-
-```bash
-PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_monthly --target monash_m1_monthly
-PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_monthly --target monash_m1_monthly
-```
-
-Repeat with `--source` / `--target` pairs from the frequency table. Defaults in each script are the values last left in the file; pass both flags explicitly for a paper dataset.
-
-### Full reproduction from scratch
-
-1. Build dev metadata for each M4 frequency (the expensive step; 8 worker processes, one BLAS thread each):
-
-```bash
-for source in m4_monthly m4_quarterly m4_yearly; do
-  PYTHONPATH=. python scripts/collecting_metadata/feature_extraction.py --source "$source"
-  PYTHONPATH=. python scripts/collecting_metadata/performance_estimates.py --source "$source"
-done
-```
-
-2. Train the three metamodels:
-
-```bash
-for source in m4_monthly m4_quarterly m4_yearly; do
-  PYTHONPATH=. python scripts/collecting_metadata/train_metaarima.py --source "$source"
-done
-```
-
-3. Run the nine-dataset benchmark in the previous section.
-4. Retrain the sweeps that read metadata. Use the same frequency pairing:
-
-```bash
-PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_monthly --target monash_m1_monthly
-PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_monthly --target monash_m1_monthly
-PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_monthly --target monash_m1_monthly
-```
-
-5. Config EDA, only after the monthly metadata exists:
-
-```bash
-PYTHONPATH=. python scripts/experiments/analysis/eda_configs.py
-```
-
-6. TSFM, from the TSFM environment. The scripts run on CPU and write under `assets/results/tsfm/<model>/`:
-
-```bash
-conda activate metaarima-tsfm
-for target in monash_m1_monthly monash_m3_monthly monash_tourism_monthly; do
-  PYTHONPATH=. python scripts/tsfm/preds_chronos2.py --source m4_monthly --target "$target"
-  PYTHONPATH=. python scripts/tsfm/preds_timesfm.py --source m4_monthly --target "$target"
-  PYTHONPATH=. python scripts/tsfm/preds_moirai2.py --source m4_monthly --target "$target"
-done
-PYTHONPATH=. python scripts/tsfm/summarize.py
-```
-
-CatBoost is trained with `random_seed` 42 and `thread_count` 1, which is what makes that seed repeatable. PCA and the Monte Carlo ablation use `RANDOM_SEED` (1) in `src/config.py`. The Optuna search in `ht_catboost.py` uses the same seed 42; the paper runs use the hyperparameters already stored in `src/config.py`, so that script is not part of the main path. TSFM scripts seed PyTorch from `RANDOM_SEED` and load pinned Hub revisions of Chronos-2, TimesFM, and Moirai-2. ARIMA fits can still move slightly across BLAS libraries.
+CatBoost training uses `random_seed` 42 and `thread_count` 1. The hyperparameter search is fixed by seed 42 (`train_test_split`, CatBoost, and `TPESampler`, one trial at a time). Downstream steps follow `BEST_CATBOOST_PARAMS` in `src/config.py`, so a re-run changes them only after that dictionary is updated from the script's printout. PCA and the Monte Carlo ablation use `RANDOM_SEED` (1) in `src/config.py`. TSFM scripts seed PyTorch from `RANDOM_SEED` and load pinned Hub revisions of Chronos-2, TimesFM, and Moirai-2. ARIMA fits can still move slightly across BLAS libraries.
 
 ---
 
@@ -296,6 +296,7 @@ These are orders of magnitude for planning a review, not a benchmark. Replace th
 |---|---|---|
 | Feature extraction, one M4 frequency | `feature_extraction.py` | On the order of hours |
 | ARIMA performance metadata, M4 monthly | `performance_estimates.py` | On the order of days (400 configurations, 8 workers). Quarterly and yearly are shorter |
+| CatBoost hyperparameter search, one M4 frequency | `ht_catboost.py` | On the order of hours (50 trials) |
 | Train one metamodel | `train_metaarima.py` | On the order of hours. `thread_count` is 1 so the seed stays fixed |
 | Main benchmark, one target dataset | `main.py` | On the order of hours |
 | Ablation, quantile sweep, or component-count sweep, one target | `ablation.py`, `sensitivity_quantile.py`, `sensitivity_ncomps.py` | On the order of days (they retrain) |
@@ -309,7 +310,7 @@ These are orders of magnitude for planning a review, not a benchmark. Replace th
 
 - **GPU:** not required. The scripts under `scripts/tsfm/` load Chronos-2, TimesFM, and Moirai-2 on CPU.
 - **Parallel metadata collection:** `performance_estimates.py` uses 8 processes and pins `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `NUMEXPR_NUM_THREADS`, and `OPENBLAS_NUM_THREADS` to 1. `feature_extraction.py` uses 6 threads inside `tsfeatures`. No cluster and no extra scheduler.
-- **Order:** collectors, then `train_metaarima.py`, then `main.py` and the sensitivity scripts, then the analysis scripts. TSFM scripts need the monthly joblib from training. The analysis scripts stop with a clear error if their input CSVs are missing.
+- **Order:** collectors, then `ht_catboost.py` when regenerating `BEST_CATBOOST_PARAMS`, then `train_metaarima.py`, then `main.py` and the sensitivity scripts, then the analysis scripts. TSFM scripts need the monthly joblib from training. The analysis scripts stop with a clear error if their input CSVs are missing.
 - **Working directory:** repository root. Prefix the Python commands with `PYTHONPATH=.`.
 
 ---

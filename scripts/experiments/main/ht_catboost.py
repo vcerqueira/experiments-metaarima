@@ -3,12 +3,10 @@ from pprint import pprint
 import optuna
 from catboost import CatBoostRegressor, Pool
 from sklearn.model_selection import train_test_split
-from sklearn.decomposition import PCA
 
 from src.meta.arima._data_reader import MetadataReader
 from src.chronos_data import ChronosDataset
 from src.config import (QUANTILE_THR,
-                        PCA_N_COMPONENTS,
                         ORDER_MAX,
                         ORDER_MAX_NONSEASONAL)
 
@@ -31,7 +29,6 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
             "loss_function": "MultiRMSE",
             "eval_metric": "MultiRMSE",
             "random_seed": random_state,
-
             "task_type": "CPU",
             "thread_count": 1,
             "depth": trial.suggest_int("depth", 2, 4),
@@ -88,8 +85,6 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
     return final, study.best_params
 
 
-opt_model, best_params = tune_catboost_small(X, y,
-                                             n_trials=50,
-                                             random_state=42)
+opt_model, best_params = tune_catboost_small(X, y, n_trials=50, random_state=42)
 
 pprint(opt_model.get_params())
