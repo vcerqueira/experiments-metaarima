@@ -1,3 +1,6 @@
+import argparse
+import os
+
 from catboost import CatBoostRegressor
 
 from src.meta.arima.meta_arima import MetaARIMA
@@ -13,9 +16,14 @@ from src.config import (MMR,
                         ORDER_MAX_NONSEASONAL,
                         BEST_CATBOOST_PARAMS)
 
-# -- train metamodel
+parser = argparse.ArgumentParser(description="Train a MetaARIMA metamodel on dev-set metadata.")
+parser.add_argument(
+    "--source",
+    default="m4_monthly",
+    help="M4 dataset the metamodel is trained on: m4_monthly, m4_quarterly, or m4_yearly.",
+)
 algorithm = 'catboost'
-source = 'm4_monthly'
+source = parser.parse_args().source
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 
@@ -23,7 +31,7 @@ ord = ORDER_MAX if freq_int > 1 else ORDER_MAX_NONSEASONAL
 pca_n = PCA_N_COMPONENTS if freq_int > 1 else 15
 
 mdr = MetadataReader(group=source, freq_int=freq_int)
-X, y, _, _, _ = mdr.read(from_dev_set=False, fill_na_value=-1, max_config=ord)
+X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 
 model = CatBoostRegressor(**BEST_CATBOOST_PARAMS[source])
 
@@ -39,4 +47,5 @@ meta_arima = MetaARIMA(model=model,
 
 meta_arima.meta_fit(X, y)
 
+os.makedirs(os.path.dirname(FILENAME) or ".", exist_ok=True)
 ModelIO.save_model(meta_arima, FILENAME)

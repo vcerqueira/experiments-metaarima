@@ -22,10 +22,6 @@ X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 y_bin = y.apply(lambda x: (x <= x.quantile(QUANTILE_THR)).astype(int), axis=1)
 
 
-# pca = PCA(n_components=PCA_N_COMPONENTS)
-# y_pca = pca.fit_transform(y_bin)
-
-
 def tune_catboost_small(X, y, n_trials=30, random_state=42):
     X_tr, X_va, y_tr, y_va = train_test_split(X, y, test_size=0.2, random_state=random_state)
     train_pool, valid_pool = Pool(X_tr, y_tr), Pool(X_va, y_va)
@@ -37,6 +33,7 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
             "random_seed": random_state,
 
             "task_type": "CPU",
+            "thread_count": 1,
             "depth": trial.suggest_int("depth", 2, 4),
             "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.06, log=True),
             "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 3.0, 60.0, log=True),
@@ -56,10 +53,11 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
         m.fit(train_pool, eval_set=valid_pool)
         return m.get_best_score()["validation"]["MultiRMSE"]
 
-    study = optuna.create_study(direction="minimize")
+    study = optuna.create_study(
+        direction="minimize",
+        sampler=optuna.samplers.TPESampler(seed=random_state),
+    )
     study.optimize(objective, n_trials=n_trials)
-    print('study.best_params')
-    print(study.best_params)
 
     best = study.best_params
     final = CatBoostRegressor(
@@ -67,6 +65,7 @@ def tune_catboost_small(X, y, n_trials=30, random_state=42):
         eval_metric="MultiRMSE",
         random_seed=random_state,
         task_type="CPU",
+        thread_count=1,
         depth=best["depth"],
         learning_rate=best["learning_rate"],
         l2_leaf_reg=best["l2_leaf_reg"],
@@ -94,60 +93,3 @@ opt_model, best_params = tune_catboost_small(X, y,
                                              random_state=42)
 
 pprint(opt_model.get_params())
-
-# M
-BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-                        'border_count': 32,
-                        'depth': 4,
-                        'eval_metric': 'MultiRMSE',
-                        'iterations': 283,
-                        'l2_leaf_reg': 16.732679992180078,
-                        'leaf_estimation_iterations': 2,
-                        'learning_rate': 0.04248616344796388,
-                        'loss_function': 'MultiRMSE',
-                        'model_size_reg': 2.0916597401644705,
-                        'od_type': 'Iter',
-                        'od_wait': 60,
-                        'random_seed': 42,
-                        'rsm': 0.6406208143252348,
-                        'task_type': 'CPU',
-                        'use_best_model': False,
-                        'verbose': False}
-
-# Q
-BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-                        'border_count': 32,
-                        'depth': 4,
-                        'eval_metric': 'MultiRMSE',
-                        'iterations': 266,
-                        'l2_leaf_reg': 6.032217388079633,
-                        'leaf_estimation_iterations': 2,
-                        'learning_rate': 0.05961229266653637,
-                        'loss_function': 'MultiRMSE',
-                        'model_size_reg': 0.6153682157721689,
-                        'od_type': 'Iter',
-                        'od_wait': 20,
-                        'random_seed': 42,
-                        'rsm': 0.6992272121986959,
-                        'task_type': 'CPU',
-                        'use_best_model': False,
-                        'verbose': False}
-
-# y
-BEST_CATBOOST_PARAMS = {'bootstrap_type': 'Bernoulli',
-                        'border_count': 64,
-                        'depth': 4,
-                        'eval_metric': 'MultiRMSE',
-                        'iterations': 300,
-                        'l2_leaf_reg': 5.903373826675397,
-                        'leaf_estimation_iterations': 2,
-                        'learning_rate': 0.05544986984539306,
-                        'loss_function': 'MultiRMSE',
-                        'model_size_reg': 1.5546708502742612,
-                        'od_type': 'Iter',
-                        'od_wait': 70,
-                        'random_seed': 42,
-                        'rsm': 0.8381786985397336,
-                        'task_type': 'CPU',
-                        'use_best_model': False,
-                        'verbose': False}

@@ -22,6 +22,10 @@ def load_ablation_results():
     """Load ablation results from all datasets and compute per-dataset mean MASE and ranks."""
     pattern = os.path.join(SENSITIVITY_DIR, 'ablation,*csv')
     paths = sorted(glob.glob(pattern))
+    if not paths:
+        raise FileNotFoundError(
+            f"No files matched {pattern}. Run scripts/experiments/main/sensitivity/ablation.py first."
+        )
 
     per_dataset = []
     all_ranks = []
@@ -99,4 +103,5 @@ plot = (
     + p9.labs(x='', y='Average rank')
 )
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot.save(PLOT_NAME, width=11, height=4.5)

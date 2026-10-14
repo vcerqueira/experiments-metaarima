@@ -32,6 +32,7 @@ BEST_CATBOOST_PARAMS = {
                    'random_seed': 42,
                    'rsm': 0.6406208143252348,
                    'task_type': 'CPU',
+                   'thread_count': 1,
                    'use_best_model': False,
                    'verbose': False},
     'm4_quarterly': {'bootstrap_type': 'Bernoulli',
@@ -49,6 +50,7 @@ BEST_CATBOOST_PARAMS = {
                      'random_seed': 42,
                      'rsm': 0.6992272121986959,
                      'task_type': 'CPU',
+                     'thread_count': 1,
                      'use_best_model': False,
                      'verbose': False},
 
@@ -67,24 +69,7 @@ BEST_CATBOOST_PARAMS = {
                   'random_seed': 42,
                   'rsm': 0.8381786985397336,
                   'task_type': 'CPU',
+                  'thread_count': 1,
                   'use_best_model': False,
                   'verbose': False}
-}
-
-BEST_LGBM_PARAMS = {
-    'm4_monthly': {'colsample_bytree': 0.954674147279825,
-                   'learning_rate': 0.08217295211648731,
-                   'max_depth': 4,
-                   'min_child_samples': 23,
-                   'n_estimators': 970,
-                   'num_leaves': 46,
-                   'subsample': 0.8568198488145982}
-}
-
-BEST_RF_PARAMS = {
-    'm4_monthly': {'colsample_bynode': 0.8018423785145038,
-                   'learning_rate': 0.8121792213475358,
-                   'n_estimators': 159,
-                   'reg_lambda': 0.0007309399242521293,
-                   'subsample': 0.8772547126671503}
 }

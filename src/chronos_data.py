@@ -13,6 +13,8 @@ class ChronosDataset:
 
     DATASET_NAME = 'CHRONOS'
     REPO_ID = 'autogluon/chronos_datasets'
+    # Hub commit pinned so a later dataset update cannot change the series.
+    REPO_REVISION = 'eeecad0b82a8c237e212ce6f8d1abecb513e2cec'
 
     FREQUENCY_MAP_DATASETS = {
         'monash_m1_monthly': 'M',
@@ -84,7 +86,12 @@ class ChronosDataset:
 
         assert group in [*cls.FREQUENCY_MAP_DATASETS], 'Unknown dataset'
 
-        ds = datasets.load_dataset(path=cls.REPO_ID, name=group, split=split)
+        ds = datasets.load_dataset(
+            path=cls.REPO_ID,
+            name=group,
+            split=split,
+            revision=cls.REPO_REVISION,
+        )
         ds.set_format("numpy")
 
         df = cls.to_pandas(ds).reset_index(drop=True)

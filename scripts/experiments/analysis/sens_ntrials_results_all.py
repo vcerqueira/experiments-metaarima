@@ -14,6 +14,10 @@ def load_ntrials_results():
     """Load ntrials sensitivity results and compute per-dataset ranks."""
     pattern = os.path.join(SENSITIVITY_DIR, '*ntrials*csv')
     paths = sorted(glob.glob(pattern))
+    if not paths:
+        raise FileNotFoundError(
+            f"No files matched {pattern}. Run scripts/experiments/main/sensitivity/sensitivity_ntrials.py first."
+        )
 
     all_meta_rows = []
 
@@ -91,4 +95,5 @@ plot = (
     + p9.ylab('Average MASE rank')
 )
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot.save(PLOT_NAME, width=12, height=4)

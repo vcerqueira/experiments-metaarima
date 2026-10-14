@@ -1,9 +1,7 @@
 from typing import Optional
-import os
 import joblib
 import gzip
 from pathlib import Path
-from dotenv import load_dotenv
 
 import pandas as pd
 
@@ -21,9 +19,9 @@ class MetadataReader:
             freq_int: int, frequency of the dataset
             id_col: str, name of the id column
         """
-        load_dotenv()
-        self.features_dir = Path(os.environ["FEATURES_DIR"])
-        self.metadata_cv_dir = Path(os.environ["METADATA_CV_DIR"])
+        metadata_dir = Path(__file__).resolve().parents[3] / "assets" / "metadata"
+        self.features_dir = metadata_dir
+        self.metadata_cv_dir = metadata_dir
         self.id_col = id_col
         self.input_variables = None
         self.model_names = None

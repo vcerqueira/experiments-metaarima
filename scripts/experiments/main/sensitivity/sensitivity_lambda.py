@@ -1,4 +1,6 @@
+import argparse
 import copy
+import os
 from pprint import pprint
 from copy import deepcopy
 
@@ -13,14 +15,18 @@ from src.meta.arima._data_reader import ModelIO
 from src.chronos_data import ChronosDataset
 from src.config import LAMBDA_SPACE
 
+parser = argparse.ArgumentParser(description="Sweep the MMR lambda of a saved MetaARIMA model.")
+parser.add_argument("--source", default="m4_yearly", help="M4 dataset of the saved metamodel.")
+parser.add_argument("--target", default="monash_m1_yearly", help="Dataset to forecast.")
+args = parser.parse_args()
+
 OVERRIDE_DS = False
 algorithm = 'catboost'
-source = 'm4_yearly'
+source = args.source
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
-target = 'monash_m1_yearly'
-# target = 'monash_hospital'
+target = args.target
 df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
 train, test = ChronosDataset.time_wise_split(df, horizon)
 
@@ -82,6 +88,7 @@ for uid in uids:
 
     results.append(err)
     results_df = pd.concat(results)
+    os.makedirs('assets/results/sensitivity', exist_ok=True)
     results_df.to_csv(f'assets/results/sensitivity/lambda,{target}.csv', index=False)
     print(results_df.mean(numeric_only=True))
     print(results_df.median(numeric_only=True))

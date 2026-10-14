@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+from src.config import RANDOM_SEED
 from src.meta.arima.multilabel_pca import MultiLabelPCARegressor
 from src.meta.arima._base import (MetaARIMAUtils,
                                   _MetaARIMABase,
@@ -52,7 +53,13 @@ class MetaARIMA:
         self.meta_regression = meta_regression
         self.selected_config = ''
         if self.target_pca:
-            self.meta_model = copy.deepcopy(MultiLabelPCARegressor(mod=model, n_components=self.pca_n_components))
+            self.meta_model = copy.deepcopy(
+                MultiLabelPCARegressor(
+                    mod=model,
+                    n_components=self.pca_n_components,
+                    random_state=RANDOM_SEED,
+                )
+            )
         else:
             self.meta_model = copy.deepcopy(model)
 

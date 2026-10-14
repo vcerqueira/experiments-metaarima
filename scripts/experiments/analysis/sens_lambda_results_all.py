@@ -12,7 +12,15 @@ SENSITIVITY_DIR = 'assets/results/sensitivity'
 
 def load_lambda_results():
     pattern = os.path.join(SENSITIVITY_DIR, '*lambda*csv')
-    paths = sorted(glob.glob(pattern))
+    # Keep lambda,{dataset}.csv and skip leftovers such as lambda,{dataset},2.csv.
+    paths = sorted(
+        path for path in glob.glob(pattern)
+        if os.path.basename(path).count(",") == 1
+    )
+    if not paths:
+        raise FileNotFoundError(
+            f"No files matched {pattern}. Run scripts/experiments/main/sensitivity/sensitivity_lambda.py first."
+        )
 
     all_meta_rows = []
 
@@ -85,4 +93,5 @@ plot = (
 
 plot = plot + p9.xlab('λ') + p9.ylab('Average MASE rank')
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot.save(PLOT_NAME, width=11, height=4)

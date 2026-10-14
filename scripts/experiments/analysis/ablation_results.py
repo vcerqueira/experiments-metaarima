@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import plotnine as p9
 
@@ -38,4 +40,5 @@ plot = p9.ggplot(avg_scores, p9.aes(**{'x': 'Variant', 'y': 'MASE'})) + \
        p9.geom_bar(stat='identity', fill='teal') + \
        p9.labs(x='')
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot.save(PLOT_NAME, width=11, height=4.5)

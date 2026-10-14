@@ -17,7 +17,7 @@ from tsfeatures import (acf_features, arch_stat, crossing_points,
                         hw_parameters, unitroot_kpss, unitroot_pp,
                         series_length, hurst, scalets)
 
-from src.config import ORDER_MAX
+from src.config import ORDER_MAX, RANDOM_SEED
 
 warnings.filterwarnings(action='ignore')
 
@@ -222,9 +222,10 @@ class _MetaARIMABaseMC:
         else:
             n_samples = self.trial_n_obs
 
+        rng = np.random.default_rng(RANDOM_SEED)
         for trial in range(self.n_trials):
             # Get a contiguous sample of n observations from df
-            start_idx = np.random.randint(0, len(df) - n_samples + 1)
+            start_idx = int(rng.integers(0, len(df) - n_samples + 1))
             sample_df = df.iloc[start_idx:start_idx + n_samples].copy()
 
             try:

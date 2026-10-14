@@ -1,4 +1,6 @@
+import argparse
 import copy
+import os
 from pprint import pprint
 
 import numpy as np
@@ -20,12 +22,16 @@ from src.config import (MMR,
                         ORDER_MAX,
                         BEST_CATBOOST_PARAMS)
 
-# -- train metamodel
+parser = argparse.ArgumentParser(description="Retrain MetaARIMA across quantile thresholds.")
+parser.add_argument("--source", default="m4_quarterly", help="M4 dataset used to train each quantile model.")
+parser.add_argument("--target", default="monash_m3_quarterly", help="Dataset to forecast.")
+args = parser.parse_args()
+
 algorithm = 'catboost'
-source = 'm4_quarterly'
+source = args.source
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
-target = 'monash_m3_quarterly'
+target = args.target
 
 mdr = MetadataReader(group=source, freq_int=freq_int)
 X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ORDER_MAX)
@@ -103,4 +109,5 @@ results_df = pd.concat(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
 
+os.makedirs('assets/results/sensitivity', exist_ok=True)
 results_df.to_csv(f'assets/results/sensitivity/quantile,{target}.csv', index=False)

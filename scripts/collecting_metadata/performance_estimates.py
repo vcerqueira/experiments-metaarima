@@ -1,3 +1,4 @@
+import argparse
 import os
 import logging
 import warnings
@@ -18,10 +19,15 @@ from src.chronos_data import ChronosDataset
 
 warnings.filterwarnings("ignore")
 
-# GROUP = 'm4_monthly'
-# GROUP = 'm4_quarterly'
-# GROUP = 'm4_yearly'
-GROUP = 'monash_car_parts'
+parser = argparse.ArgumentParser(
+    description="Estimate ARIMA configuration performance on the dev split of one dataset."
+)
+parser.add_argument(
+    "--source",
+    default="monash_car_parts",
+    help="Hugging Face config name. Paper metadata uses m4_monthly, m4_quarterly, or m4_yearly.",
+)
+GROUP = parser.parse_args().source
 
 df, horizon, n_lags, freq, seas_len = ChronosDataset.load_everything(GROUP)
 
@@ -96,6 +102,7 @@ def process_series(
 
 if __name__ == "__main__":
     outfile_arima = Path(__file__).parent.parent.parent / 'assets' / 'metadata'
+    outfile_arima.mkdir(parents=True, exist_ok=True)
 
     df_grouped = dev.groupby("unique_id")
 
@@ -132,5 +139,6 @@ if __name__ == "__main__":
         if col not in ["best_config", "unique_id"]
     }
     results_df = results_df.astype(type_dict)
+    results_df = results_df.sort_values("unique_id")
     results_df.to_csv(outfile_arima / f"arima-dev,{GROUP}.csv", index=False)
     logging.info("Processing completed and results saved")

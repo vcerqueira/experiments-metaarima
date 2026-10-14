@@ -1,4 +1,6 @@
+import argparse
 import copy
+import os
 from pprint import pprint
 
 import numpy as np
@@ -21,9 +23,13 @@ from src.config import (N_TRIALS,
                         QUANTILE_THR,
                         BEST_CATBOOST_PARAMS)
 
-# -- train metamodel
+parser = argparse.ArgumentParser(description="Ablation of MetaARIMA variants on one target dataset.")
+parser.add_argument("--source", default="m4_yearly", help="M4 dataset used to train the ablation variants.")
+parser.add_argument("--target", default="monash_tourism_monthly", help="Dataset to forecast.")
+args = parser.parse_args()
+
 algorithm = 'catboost'
-source = 'm4_yearly'
+source = args.source
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
 # PCA_N_COMPONENTS=15
@@ -148,7 +154,7 @@ for variant_ in meta_arima_d:
 model_names = [*meta_arima_d] + ['AutoARIMA']
 
 
-target = 'monash_tourism_monthly'
+target = args.target
 df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
 train, test = ChronosDataset.time_wise_split(df, horizon)
 
@@ -202,4 +208,5 @@ results_df = pd.concat(results)
 print(results_df.mean(numeric_only=True))
 print(results_df.median(numeric_only=True))
 
+os.makedirs('assets/results/sensitivity', exist_ok=True)
 results_df.to_csv(f'assets/results/sensitivity/ablation,{target}.csv', index=False)

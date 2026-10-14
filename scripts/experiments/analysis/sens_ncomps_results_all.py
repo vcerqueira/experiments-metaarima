@@ -14,6 +14,10 @@ def load_ncomps_results():
     """Load ncomps sensitivity results and compute per-dataset ranks."""
     pattern = os.path.join(SENSITIVITY_DIR, '*ncomps*csv')
     paths = sorted(glob.glob(pattern))
+    if not paths:
+        raise FileNotFoundError(
+            f"No files matched {pattern}. Run scripts/experiments/main/sensitivity/sensitivity_ncomps.py first."
+        )
 
     all_meta_rows = []
 
@@ -85,4 +89,5 @@ plot = (
 
 plot = plot + p9.xlab('Number of principal components') + p9.ylab('Average MASE rank')
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot.save(PLOT_NAME, width=12, height=4)

@@ -1,14 +1,20 @@
+import argparse
+
 from src.meta.arima._data_reader import ModelIO
 from src.chronos_data import ChronosDataset
 
+parser = argparse.ArgumentParser(description="Compare observation counts used by MetaARIMA and AutoARIMA.")
+parser.add_argument("--source", default="m4_monthly", help="M4 dataset of the saved metamodel.")
+parser.add_argument("--target", default="monash_m3_monthly", help="Dataset to forecast.")
+args = parser.parse_args()
+
 OVERRIDE_DS = False
 algorithm = 'catboost'
-source = 'm4_monthly'
+source = args.source
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
-target = 'monash_m3_monthly'
-# target = 'monash_hospital'
+target = args.target
 df, horizon, _, freq, seas_len = ChronosDataset.load_everything(target)
 train, test = ChronosDataset.time_wise_split(df, horizon)
 

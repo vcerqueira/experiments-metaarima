@@ -1,3 +1,4 @@
+import os
 import re
 
 import pandas as pd
@@ -45,39 +46,10 @@ plot = p9.ggplot(config_ranks_mt, p9.aes(**{'x': 'variable',
        p9.xlab('') + \
        p9.ylab('MASE Rank')
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot_name = 'assets/results/plots/config_rank_dist.pdf'
 
 plot.save(plot_name, width=15, height=5)
-
-# number of wins p configs
-# (config_ranks == 1).sum().sort_values(ascending=False)[:25]
-
-## ... not sure this brings any more value than what the previous one already shows
-
-
-# corr with best
-corr_scores = y.corr()
-corr_scr = corr_scores['ARIMA(1,1,1)(0,1,1)[12]'].sort_values(ascending=False)
-
-top_50 = corr_scr.head(75)
-bottom_50 = corr_scr.tail(75)
-filtered_corr = pd.concat([top_50, bottom_50])
-
-df = filtered_corr.reset_index()
-df.columns = ['Configuration', 'Correlation']
-
-p = p9.ggplot(df, p9.aes(x='reorder(Configuration, Correlation)', y='Correlation')) + \
-    p9.geom_bar(stat='identity', fill='#4C72B0') + \
-    THEME + \
-    p9.theme(plot_margin=0.015,
-             axis_text_y=p9.element_text(size=12),
-             axis_text_x=p9.element_blank(),
-             legend_title=p9.element_blank(),
-             legend_position=None) + \
-    p9.labs(x='', y='Pearson Correlation', title='')
-
-plot_name = 'assets/results/plots/config_corr_best.pdf'
-p.save(plot_name, width=12, height=4.5)
 
 # complexity v avg rank
 

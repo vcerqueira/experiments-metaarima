@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import plotnine as p9
 
@@ -69,4 +71,5 @@ plot = (
         + p9.labs(x='', y='value')
 )
 
+os.makedirs('assets/results/plots', exist_ok=True)
 plot.save(f'assets/results/plots/tsfm_predictions_{uid}.pdf', width=12, height=4.5)

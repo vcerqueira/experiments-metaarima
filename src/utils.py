@@ -21,7 +21,15 @@ THEME = p9.theme_538(base_family='Palatino', base_size=12) + \
 
 
 def read_results(file_path: str = RESULTS_DIR) -> pd.DataFrame:
-    results_list = os.listdir(file_path)
+    if not os.path.isdir(file_path):
+        raise FileNotFoundError(
+            f"{file_path} does not exist. Run scripts/experiments/main/main.py for each target dataset first."
+        )
+    results_list = [name for name in os.listdir(file_path) if name.endswith(".csv")]
+    if not results_list:
+        raise FileNotFoundError(
+            f"{file_path} has no CSV files. Run scripts/experiments/main/main.py for each target dataset first."
+        )
 
     all_results = []
     for f in results_list:
