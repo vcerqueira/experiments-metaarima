@@ -21,10 +21,8 @@ parser.add_argument("--source", default="m4_monthly", help="M4 dataset of the sa
 parser.add_argument("--target", default="monash_car_parts", help="Dataset to forecast.")
 args = parser.parse_args()
 
-OVERRIDE_DS = False
-algorithm = 'catboost'
 source = args.source
-FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
+FILENAME = f'assets/trained_metaarima_{source}_catboost.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
 target = args.target
@@ -62,18 +60,15 @@ for uid in uids:
     if df_uid_ts.isna().any()['y']:
         continue
 
-    meta_arima.fit(df_uid_tr, freq=freq, seas_length=seas_len)
-
-    fcst_ma = meta_arima.predict(h=horizon)
-
-    sf = StatsForecast(models=deepcopy(sf_models), freq=freq)
-    sf.fit(df_uid_tr)
-
-    fcst_aa = sf.forecast(h=horizon)
-
-    if OVERRIDE_DS:
-        fcst_ma['ds'] = df_uid_ts['ds'].values
-        fcst_aa['ds'] = df_uid_ts['ds'].values
+    try:
+        meta_arima.fit(df_uid_tr, freq=freq, seas_length=seas_len)
+        fcst_ma = meta_arima.predict(h=horizon)
+        sf = StatsForecast(models=deepcopy(sf_models), freq=freq)
+        sf.fit(df_uid_tr)
+        fcst_aa = sf.forecast(h=horizon)
+    except NotImplementedError:
+        print(f"skipping {uid}: series too short for AutoETS")
+        continue
 
     uid_test = df_uid_ts.merge(fcst_ma, on=['unique_id', 'ds'])
     uid_test = uid_test.merge(fcst_aa, on=['unique_id', 'ds'])

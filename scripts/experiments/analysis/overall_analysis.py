@@ -25,4 +25,4 @@ avg_by_ds_tab = to_latex_tab(avg_by_ds, 4, rotate_cols=True)
 print(avg_by_ds_tab)
 
 med_by_ds_tab = to_latex_tab(med_by_ds, 4, rotate_cols=True)
-print(med_by_ds_tab)
+# print(med_by_ds_tab)

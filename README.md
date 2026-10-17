@@ -164,6 +164,17 @@ PYTHONPATH=. python scripts/collecting_metadata/feature_extraction.py --source m
 PYTHONPATH=. python scripts/collecting_metadata/performance_estimates.py --source m4_yearly
 ```
 
+If you run into some cache issues you might need to delete previous files like so:
+
+`rm -rf ~/.cache/huggingface/datasets/autogluon___chronos_datasets/m4_monthly`
+
+Step 1 takes about 48h-72h to complete with the predefined parallel computing setup. 
+You can be skip it and download the resulting metadata files directly from the following link:
+
+https://www.dropbox.com/scl/fo/4urjrqjaxk73t4o3sdj6e/AIN9mZBiT94poDpmWGfAvFg?rlkey=6xt57hdr5y36qqyd7eqp5806g&st=m3y0h6fv&dl=0
+
+Make sure that the files are placed in the folder `assets/metadata` for downstream scripts to work properly.
+
 ### 2. Train the metamodels
 
 `BEST_CATBOOST_PARAMS` in `src/config.py` is the CatBoost configuration used by every later step. Those values come from `scripts/experiments/main/ht_catboost.py`. The search is fixed by seed 42: the 20% holdout uses `random_state` 42, each of the 50 trials fits CatBoost with `random_seed` 42 and `thread_count` 1, and Optuna draws trials one at a time from `TPESampler(seed=42)`. With the same dev metadata, a re-run prints the same parameters.
@@ -200,22 +211,45 @@ PYTHONPATH=. python scripts/experiments/main/main.py --source m4_yearly --target
 
 ### 4. Sensitivity
 
-The lambda and n-trials sweeps load the saved model and do not read metadata:
+The lambda and n-trials sweeps load the saved model and do not read metadata. They cover the three monthly and three quarterly evaluation datasets:
 
 ```bash
 PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_quarterly --target monash_m1_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_quarterly --target monash_m3_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_lambda.py --source m4_quarterly --target monash_tourism_quarterly
 PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_quarterly --target monash_m1_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_quarterly --target monash_m3_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ntrials.py --source m4_quarterly --target monash_tourism_quarterly
 ```
 
-Ablation, the quantile sweep, and the component-count sweep retrain and read the metadata from step 1. Use the same frequency pairing:
+Ablation, the quantile sweep, and the component-count sweep retrain and read the metadata from step 1. They use the same six datasets:
 
 ```bash
 PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_quarterly --target monash_m1_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_quarterly --target monash_m3_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/ablation.py --source m4_quarterly --target monash_tourism_quarterly
 PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_quarterly --target monash_m1_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_quarterly --target monash_m3_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_quantile.py --source m4_quarterly --target monash_tourism_quarterly
 PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_monthly --target monash_m1_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_monthly --target monash_m3_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_monthly --target monash_tourism_monthly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_quarterly --target monash_m1_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_quarterly --target monash_m3_quarterly
+PYTHONPATH=. python scripts/experiments/main/sensitivity/sensitivity_ncomps.py --source m4_quarterly --target monash_tourism_quarterly
 ```
-
-Repeat with `--source` / `--target` pairs from the frequency table. Defaults in each script are the values last left in the file; pass both flags explicitly for a paper dataset.
 
 ### 5. Config EDA
 
@@ -294,10 +328,10 @@ These are orders of magnitude for planning a review, not a benchmark. Replace th
 
 | Step | Script | Approximate runtime |
 |---|---|---|
-| Feature extraction, one M4 frequency | `feature_extraction.py` | On the order of hours |
-| ARIMA performance metadata, M4 monthly | `performance_estimates.py` | On the order of days (400 configurations, 8 workers). Quarterly and yearly are shorter |
-| CatBoost hyperparameter search, one M4 frequency | `ht_catboost.py` | On the order of hours (50 trials) |
-| Train one metamodel | `train_metaarima.py` | On the order of hours. `thread_count` is 1 so the seed stays fixed |
+| Feature extraction, one M4 frequency | `feature_extraction.py` | Up to 2 hours |
+| ARIMA performance metadata, M4 monthly | `performance_estimates.py` | 48-72 hours (parallel computing) |
+| CatBoost hyperparameter search, one M4 frequency | `ht_catboost.py` | Up to one hour |
+| Train one metamodel | `train_metaarima.py` | Up to 1 hour (all frequencies)|
 | Main benchmark, one target dataset | `main.py` | On the order of hours |
 | Ablation, quantile sweep, or component-count sweep, one target | `ablation.py`, `sensitivity_quantile.py`, `sensitivity_ncomps.py` | On the order of days (they retrain) |
 | Lambda or n-trials sweep, one target | `sensitivity_lambda.py`, `sensitivity_ntrials.py` | Hours to about a day |

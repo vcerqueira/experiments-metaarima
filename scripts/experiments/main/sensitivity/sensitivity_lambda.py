@@ -21,9 +21,8 @@ parser.add_argument("--target", default="monash_m1_yearly", help="Dataset to for
 args = parser.parse_args()
 
 OVERRIDE_DS = False
-algorithm = 'catboost'
 source = args.source
-FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
+FILENAME = f'assets/trained_metaarima_{source}_catboost.joblib.gz'
 meta_arima = ModelIO.load_model(FILENAME)
 
 target = args.target
@@ -49,12 +48,6 @@ st = False
 results = []
 for uid in uids:
     print(uid)
-
-    # if uid == 'T000321':
-    #     st=True
-    #
-    # if not st:
-    #     continue
 
     df_uid_tr = train.query(f'unique_id=="{uid}"').reset_index(drop=True)
     df_uid_ts = test.query(f'unique_id=="{uid}"').reset_index(drop=True)

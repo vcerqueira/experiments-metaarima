@@ -18,10 +18,10 @@ class ChronosDataset:
 
     FREQUENCY_MAP_DATASETS = {
         'monash_m1_monthly': 'M',
-        'monash_m1_quarterly': 'Q',
+        'monash_m1_quarterly': 'QE-JAN',
         'monash_m1_yearly': 'Y',
         'monash_m3_monthly': 'M',
-        'monash_m3_quarterly': 'Q',
+        'monash_m3_quarterly': 'QE-JAN',
         'monash_m3_yearly': 'Y',
         'monash_tourism_monthly': 'M',
         'monash_tourism_quarterly': 'Q',
@@ -39,6 +39,7 @@ class ChronosDataset:
     M4_HORIZON_MAP = {
         "Y": 6,
         "Q": 8,
+        "QE-JAN": 8,
         "M": 18,
         "MS": 18,
         "ME": 18,
@@ -50,6 +51,7 @@ class ChronosDataset:
     HORIZON_MAP = {
         "Y": 6,
         "Q": 8,
+        "QE-JAN": 8,
         "M": 12,
         "MS": 12,
         "ME": 12,
@@ -63,6 +65,7 @@ class ChronosDataset:
     FREQUENCY_MAP = {
         "Y": 1,
         "Q": 4,
+        "QE-JAN": 4,
         "M": 12,
         "MS": 12,
         "ME": 12,
@@ -113,11 +116,6 @@ class ChronosDataset:
                         split: str = 'train',
                         min_n_instances: Optional[int] = None,
                         sample_n_uid: Optional[int] = None):
-
-        # if split == 'both':
-        #     df_train = cls.load_data(group=group, split='train', min_n_instances=min_n_instances)
-        #     df_test = cls.load_data(group=group, split='test', min_n_instances=min_n_instances)
-        #     df = pd.concat([df_train, df_test], axis=0).sort_values([id_col, time_col]).reset_index(drop=True)
 
         df = cls.load_data(group=group, split=split, min_n_instances=min_n_instances)
 
