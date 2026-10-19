@@ -330,11 +330,11 @@ These are orders of magnitude for planning a review, not a benchmark. Replace th
 |---|---|---|
 | Feature extraction, one M4 frequency | `feature_extraction.py` | Up to 2 hours |
 | ARIMA performance metadata, M4 monthly | `performance_estimates.py` | 48-72 hours (parallel computing) |
-| CatBoost hyperparameter search, one M4 frequency | `ht_catboost.py` | Up to one hour |
+| CatBoost hyperparameter search, one M4 frequency | `ht_catboost.py` | Up to 24 hours |
 | Train one metamodel | `train_metaarima.py` | Up to 1 hour (all frequencies)|
 | Main benchmark, one target dataset | `main.py` | On the order of hours |
 | Ablation, quantile sweep, or component-count sweep, one target | `ablation.py`, `sensitivity_quantile.py`, `sensitivity_ncomps.py` | On the order of days (they retrain) |
-| Lambda or n-trials sweep, one target | `sensitivity_lambda.py`, `sensitivity_ntrials.py` | Hours to about a day |
+| Lambda or n-trials sweep, one target | `sensitivity_lambda.py`, `sensitivity_ntrials.py` | Around 24 hours |
 | One TSFM script, three monthly datasets | `scripts/tsfm/preds_*.py` | On the order of hours to about a day on CPU |
 | Tables and figures | `scripts/experiments/analysis/` | A few minutes, once the CSVs exist |
 
