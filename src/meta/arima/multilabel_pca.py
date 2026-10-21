@@ -42,11 +42,10 @@ class MultiLabelPCARegressor(BaseEstimator, MultiOutputMixin):
 
         self.n_features_in_ = X.shape[1]
         self.n_outputs_ = y.shape[1]
+        self.n_components = min(self.n_components, y.shape[1], X.shape[0])
         self.pca = PCA(n_components=self.n_components, random_state=self.random_state)
 
         X_scaled = self.feature_scaler_.fit_transform(X)
-
-        self.n_components = min(self.n_components, y.shape[1])
 
         if process_y:
             self.is_meta_regression = True

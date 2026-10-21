@@ -32,10 +32,12 @@ algorithm = 'catboost'
 source = args.source
 FILENAME = f'assets/trained_metaarima_{source}_{algorithm}.joblib.gz'
 _, _, _, freq_str, freq_int = ChronosDataset.load_everything(source)
-# PCA_N_COMPONENTS=15
+
+ord = ORDER_MAX if freq_int > 1 else ORDER_MAX_NONSEASONAL
+pca_n = PCA_N_COMPONENTS if freq_int > 1 else 15
 
 mdr = MetadataReader(group=source, freq_int=freq_int)
-X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ORDER_MAX_NONSEASONAL)
+X, y, _, _, _ = mdr.read(from_dev_set=True, fill_na_value=-1, max_config=ord)
 
 # X.isna().any().any()
 # y.isna().any().any()
@@ -66,7 +68,7 @@ meta_arima_d['Meta-Regr'] = MetaARIMA(model=mod,
                                       season_length=freq_int,
                                       n_trials=N_TRIALS,
                                       meta_regression=True,
-                                      pca_n_components=PCA_N_COMPONENTS,
+                                      pca_n_components=pca_n,
                                       quantile_thr=QUANTILE_THR,
                                       use_mmr=True,
                                       base_optim=BASE_OPTIM,
@@ -77,7 +79,7 @@ meta_arima_d['MetaARIMA'] = MetaARIMA(model=mod,
                                       freq=freq_str,
                                       season_length=freq_int,
                                       n_trials=N_TRIALS,
-                                      pca_n_components=PCA_N_COMPONENTS,
+                                      pca_n_components=pca_n,
                                       quantile_thr=QUANTILE_THR,
                                       use_mmr=True,
                                       base_optim=BASE_OPTIM,
@@ -88,7 +90,7 @@ meta_arima_d['No-PCA'] = MetaARIMA(model=mod_clf_ch,
                                    season_length=freq_int,
                                    n_trials=N_TRIALS,
                                    target_pca=False,
-                                   pca_n_components=PCA_N_COMPONENTS,
+                                   pca_n_components=pca_n,
                                    quantile_thr=QUANTILE_THR,
                                    use_mmr=True,
                                    base_optim=BASE_OPTIM,
@@ -99,7 +101,7 @@ meta_arima_d['Reg-Chain'] = MetaARIMA(model=mod_reg_ch,
                                       season_length=freq_int,
                                       n_trials=N_TRIALS,
                                       target_pca=True,
-                                      pca_n_components=PCA_N_COMPONENTS,
+                                      pca_n_components=pca_n,
                                       quantile_thr=QUANTILE_THR,
                                       use_mmr=True,
                                       base_optim=BASE_OPTIM,
@@ -110,7 +112,7 @@ meta_arima_d['No-SH'] = MetaARIMA(model=mod,
                                   freq=freq_str,
                                   season_length=freq_int,
                                   n_trials=N_TRIALS,
-                                  pca_n_components=PCA_N_COMPONENTS,
+                                  pca_n_components=pca_n,
                                   quantile_thr=QUANTILE_THR,
                                   base_optim='complete',
                                   mmr_lambda=LAMBDA)
@@ -120,7 +122,7 @@ meta_arima_d['MonteCarlo'] = MetaARIMA(model=mod,
                                        season_length=freq_int,
                                        n_trials=N_TRIALS,
                                        quantile_thr=QUANTILE_THR,
-                                       pca_n_components=PCA_N_COMPONENTS,
+                                       pca_n_components=pca_n,
                                        use_mmr=True,
                                        base_optim='mc',
                                        mmr_lambda=LAMBDA)
@@ -130,7 +132,7 @@ meta_arima_d['MO-Regr'] = MetaARIMA(model=mod_reg_mo,
                                     season_length=freq_int,
                                     n_trials=N_TRIALS,
                                     quantile_thr=QUANTILE_THR,
-                                    pca_n_components=PCA_N_COMPONENTS,
+                                    pca_n_components=pca_n,
                                     use_mmr=True,
                                     base_optim=BASE_OPTIM,
                                     mmr_lambda=LAMBDA)
@@ -139,7 +141,7 @@ meta_arima_d['MO-Regr'] = MetaARIMA(model=mod_reg_mo,
 #                                    freq=freq_str,
 #                                    season_length=freq_int,
 #                                    n_trials=N_TRIALS,
-#                                    pca_n_components=PCA_N_COMPONENTS,
+#                                    pca_n_components=pca_n,
 #                                    quantile_thr=QUANTILE_THR,
 #                                    use_mmr=False,
 #                                    base_optim=BASE_OPTIM,
