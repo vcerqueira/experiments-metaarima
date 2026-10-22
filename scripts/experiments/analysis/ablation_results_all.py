@@ -12,8 +12,8 @@ SENSITIVITY_DIR = 'assets/results/sensitivity'
 
 COLUMN_RENAME = {
     'Meta-Regr': 'No-Binarization',
-    'Reg-Chain': 'Regr. Chain',
-    'MO-Regr': 'Regr. MO',
+    'Reg-Chain': 'Reg-Chain',
+    'MO-Regr': 'Reg-MO',
     'MonteCarlo': 'Monte Carlo',
 }
 
