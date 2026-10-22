@@ -11,7 +11,7 @@ SENSITIVITY_DIR = 'assets/results/sensitivity'
 
 
 def load_ncomps_results():
-    """Load ncomps sensitivity results and compute per-dataset ranks."""
+    """Load ncomps sensitivity results and average the MASE rank of each series."""
     pattern = os.path.join(SENSITIVITY_DIR, '*ncomps*csv')
     paths = sorted(glob.glob(pattern))
     if not paths:
@@ -23,17 +23,12 @@ def load_ncomps_results():
 
     for path in paths:
         results_df = pd.read_csv(path)
-        avg_scores = results_df.mean(numeric_only=True)
-
-        meta_mask = avg_scores.index.str.contains('MetaARIMA')
-        if not meta_mask.any():
+        meta_cols = results_df.columns[results_df.columns.str.contains('MetaARIMA')]
+        if len(meta_cols) == 0:
             continue
 
-        ncomps = (
-            avg_scores.index[meta_mask]
-            .str.extract(r'\((.*?)\)')[0]
-            .astype(int)
-        )
+        ncomps = meta_cols.str.extract(r'\((.*?)\)')[0].astype(int)
+        series_ranks = results_df[meta_cols].rank(axis=1, ascending=True, method='average')
 
         dataset_name = os.path.basename(path)
         dataset_name = dataset_name.replace('ncomps,', '').replace('.csv', '')
@@ -41,12 +36,11 @@ def load_ncomps_results():
         df_meta = pd.DataFrame(
             {
                 'ncomps': ncomps.values,
-                'MASE': avg_scores[meta_mask].values,
+                'MASE': results_df[meta_cols].mean().values,
                 'dataset': dataset_name,
+                'rank': series_ranks.mean().values,
             }
         )
-
-        df_meta['rank'] = df_meta['MASE'].rank(ascending=True, method='average')
 
         all_meta_rows.append(df_meta)
 
