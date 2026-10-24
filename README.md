@@ -6,6 +6,9 @@
 **Reproducibility package for:**
 > MetaARIMA: Configuration-Level Transfer Learning for ARIMA Models.
 
+**Pretrained model available:**
+> This repository reproduces the experiments in that paper. A pretrained model is available in the [metaforecast](https://github.com/vcerqueira/metaforecast) Python package. The notebook [`09-metaarima-statsforecast.ipynb`](https://github.com/vcerqueira/metaforecast/blob/main/notebooks/09-metaarima-statsforecast.ipynb) shows how to use it in a way compatible with StatsForecast.
+
 ---
 
 ## Reproducibility Package Information
