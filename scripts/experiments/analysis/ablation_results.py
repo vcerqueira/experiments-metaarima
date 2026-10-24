@@ -5,7 +5,7 @@ import plotnine as p9
 
 from src.utils import THEME
 
-PLOT_NAME = 'assets/results/plots/ablation_scores.pdf'
+PLOT_NAME = 'assets/results/plots/ablation_scores.eps'
 
 results_df = pd.read_csv('assets/results/sensitivity/ablation,monash_m3_monthly.csv')
 results_df = results_df.rename(columns={

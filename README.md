@@ -1,22 +1,19 @@
-# MetaARIMA: Automatic Configuration of ARIMA using Metalearning
+# MetaARIMA: Configuration-Level Transfer Learning for ARIMA Models
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Reproducibility package for:**
-> MetaARIMA: Automatic Configuration of ARIMA using Metalearning.
-
+> MetaARIMA: Configuration-Level Transfer Learning for ARIMA Models.
 
 ---
 
 ## Reproducibility Package Information
 
-- **Date assembled:** 13 October 2026
-- **Authors:** TODO — replace with the package author name (`TODO — email`)
-- **Affiliation:** TODO — replace with affiliation
+- **Date assembled:** 20 October 2026
+- **Authors:** Vitor Cerqueira, Ricardo Inácio, Carlos Soares (`vitorc@dei.uc.pt`)
+- **Affiliation:** University of Coimbra, University of Porto, Portugal
 - **Licence:** MIT (`LICENSE`)
-
-Replace the copyright line in `LICENSE` with the author name when you fill this block in. Questions about running the package should go to the email above, or to an issue on this repository.
 
 ---
 
@@ -42,7 +39,7 @@ Replace the copyright line in `LICENSE` with the author name when you fill this 
 │       ├── main/               # Per-dataset benchmark CSVs
 │       ├── sensitivity/        # Ablation and sensitivity CSVs
 │       ├── tsfm/               # Foundation-model scores and predictions
-│       └── plots/              # PDFs written by the analysis scripts
+│       └── plots/              # PDF figures written by the analysis scripts
 ├── requirements.txt            # Single environment, pinned
 └── README.md
 ```
@@ -53,12 +50,7 @@ Run every command below from the repository root. Scripts import `src`, so prefi
 
 ## Computing Environment
 
-| Component | Analysis scripts | Full CPU experiments | TSFM scripts |
-|---|---|---|---|
-| **OS** | Any | TODO — record the machine used for the paper runs | Any. The committed scores were produced on an NVIDIA GeForce RTX 2050 |
-| **CPU / RAM** | A laptop is enough | TODO — record processor and RAM | A laptop is enough. CPU inference is slower than the original GPU runs |
-| **GPU** | None | None | None. The scripts load the models on CPU |
-| **Python** | 3.12 | 3.12 | 3.12 |
+The committed scores were produced on a MacBook Pro with an Apple M2 Pro chip (12-core CPU, 19-core GPU) and 16 GB of unified memory. The scripts run on any CPU, and a standard laptop is enough. The foundation-model scripts load the models on CPU.
 
 **Language:** Python 3.12
 **Package manager:** conda (or any environment that can `pip install` the pinned file)
@@ -278,7 +270,7 @@ PYTHONPATH=. python scripts/tsfm/summarize.py
 
 ### 7. Tables and figures
 
-These scripts read the CSVs from the steps above and write PDFs under `assets/results/plots/`.
+These scripts read the CSVs from the steps above and write EPS figures under `assets/results/plots/`.
 
 ```bash
 PYTHONPATH=. python scripts/experiments/analysis/overall_analysis.py
@@ -309,14 +301,14 @@ Names below are descriptive. Renumber them to the manuscript before submission.
 |---|---|---|
 | Mean MASE by dataset, and average rank | `scripts/experiments/analysis/overall_analysis.py` | Console LaTeX. Reads `assets/results/main/*.csv` |
 | Median MASE by dataset, and average rank | same script | Console LaTeX |
-| Ablation MASE by dataset and average rank | `scripts/experiments/analysis/ablation_results_all.py` | Console LaTeX and `assets/results/plots/ablation_scores.pdf` |
-| Lambda sensitivity | `scripts/experiments/analysis/sens_lambda_results_all.py` | `assets/results/plots/lambda_scores.pdf` |
-| Quantile sensitivity | `scripts/experiments/analysis/sens_quantile_results_all.py` | `assets/results/plots/quantile_scores.pdf` |
-| Number-of-trials sensitivity | `scripts/experiments/analysis/sens_ntrials_results_all.py` | `assets/results/plots/ntrials_scores.pdf` |
-| PCA component-count sensitivity | `scripts/experiments/analysis/sens_ncomps_results_all.py` | `assets/results/plots/ncomps_scores.pdf` |
-| Configuration rank and complexity | `scripts/experiments/analysis/eda_configs.py` | `config_rank_dist.pdf` and `complexity_vs_rank.pdf` in `assets/results/plots/`. Needs M4 monthly metadata |
+| Ablation MASE by dataset and average rank | `scripts/experiments/analysis/ablation_results_all.py` | Console LaTeX and `assets/results/plots/ablation_scores.eps` |
+| Lambda sensitivity | `scripts/experiments/analysis/sens_lambda_results_all.py` | `assets/results/plots/lambda_scores.eps` |
+| Quantile sensitivity | `scripts/experiments/analysis/sens_quantile_results_all.py` | `assets/results/plots/quantile_scores.eps` |
+| Number-of-trials sensitivity | `scripts/experiments/analysis/sens_ntrials_results_all.py` | `assets/results/plots/ntrials_scores.eps` |
+| PCA component-count sensitivity | `scripts/experiments/analysis/sens_ncomps_results_all.py` | `assets/results/plots/ncomps_scores.eps` |
+| Configuration rank and complexity | `scripts/experiments/analysis/eda_configs.py` | `config_rank_dist.eps` and `complexity_vs_rank.eps` in `assets/results/plots/`. Needs M4 monthly metadata |
 | TSFM score summary | `scripts/tsfm/summarize.py` | Console tables from `assets/results/tsfm/*/scores,*.csv` |
-| TSFM forecast example | `scripts/experiments/analysis/plot_tsfm.py` | `assets/results/plots/tsfm_predictions_{uid}.pdf` |
+| TSFM forecast example | `scripts/experiments/analysis/plot_tsfm.py` | `assets/results/plots/tsfm_predictions_{uid}.eps` |
 
 `scripts/experiments/main/sensitivity/calc_cost_n_obs.py` prints observation counts for MetaARIMA and a naive AutoARIMA comparison. It does not write a figure.
 
@@ -332,7 +324,7 @@ These are orders of magnitude for planning a review, not a benchmark. Replace th
 | ARIMA performance metadata, M4 monthly | `performance_estimates.py` | 48-72 hours (parallel computing) |
 | CatBoost hyperparameter search, one M4 frequency | `ht_catboost.py` | Up to 24 hours |
 | Train one metamodel | `train_metaarima.py` | Up to 1 hour (all frequencies)|
-| Main benchmark, one target dataset | `main.py` | Around 24 hours |
+| Main benchmark, one target dataset | `main.py` | Around 48 hours |
 | Ablation, quantile sweep, or component-count sweep, one target | `ablation.py`, `sensitivity_quantile.py`, `sensitivity_ncomps.py` | Around 5 days |
 | Lambda or n-trials sweep, one target | `sensitivity_lambda.py`, `sensitivity_ntrials.py` | 24-42 hours |
 | One TSFM script, three monthly datasets | `scripts/tsfm/preds_*.py` | Around 24 hours |
@@ -349,15 +341,3 @@ These are orders of magnitude for planning a review, not a benchmark. Replace th
 
 ---
 
-## Citation
-
-```bibtex
-@article{todo,
-  title={MetaARIMA: Automatic Configuration of ARIMA using Metalearning},
-  author={TODO},
-  journal={International Journal of Forecasting},
-  year={TODO}
-}
-```
-
-Replace this entry with the published citation, and replace the author block at the top of this file, before submission.

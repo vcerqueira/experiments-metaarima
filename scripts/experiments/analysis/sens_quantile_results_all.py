@@ -6,7 +6,7 @@ import plotnine as p9
 
 from src.utils import THEME
 
-PLOT_NAME = 'assets/results/plots/quantile_scores.pdf'
+PLOT_NAME = 'assets/results/plots/quantile_scores.eps'
 SENSITIVITY_DIR = 'assets/results/sensitivity'
 
 

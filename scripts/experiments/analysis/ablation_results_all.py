@@ -6,7 +6,7 @@ import plotnine as p9
 
 from src.utils import THEME
 
-PLOT_NAME = 'assets/results/plots/ablation_scores.pdf'
+PLOT_NAME = 'assets/results/plots/ablation_scores.eps'
 TABLE_NAME = 'assets/results/plots/ablation_table_all.tex'
 SENSITIVITY_DIR = 'assets/results/sensitivity'
 

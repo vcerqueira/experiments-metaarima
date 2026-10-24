@@ -6,7 +6,7 @@ import plotnine as p9
 
 from src.utils import THEME
 
-PLOT_NAME = 'assets/results/plots/ncomps_scores.pdf'
+PLOT_NAME = 'assets/results/plots/ncomps_scores.eps'
 SENSITIVITY_DIR = 'assets/results/sensitivity'
 
 

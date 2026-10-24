@@ -47,7 +47,7 @@ plot = p9.ggplot(config_ranks_mt, p9.aes(**{'x': 'variable',
        p9.ylab('MASE Rank')
 
 os.makedirs('assets/results/plots', exist_ok=True)
-plot_name = 'assets/results/plots/config_rank_dist.pdf'
+plot_name = 'assets/results/plots/config_rank_dist.eps'
 
 plot.save(plot_name, width=15, height=5)
 
@@ -86,4 +86,4 @@ complexity_plot = p9.ggplot(config_summary.dropna(),
                   THEME + \
                   p9.labs(x='Total Parameters (p+q+P+Q)', y='Average Rank', title='')
 
-complexity_plot.save('assets/results/plots/complexity_vs_rank.pdf', width=8, height=6)
+complexity_plot.save('assets/results/plots/complexity_vs_rank.eps', width=8, height=6)
